@@ -18,6 +18,7 @@ import javafx.stage.FileChooser;
 import lombok.extern.slf4j.Slf4j;
 import org.controlsfx.control.CheckListView;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -93,6 +94,13 @@ public class MainController implements Initializable {
     @Autowired
     private ConfigurationService configurationService;
 
+    // Application properties
+    @Value("${application.description}")
+    private String applicationDescription;
+    
+    @Value("${application.version}")
+    private String applicationVersion;
+
     private PackageConfiguration currentConfig;
 
     @Override
@@ -151,6 +159,13 @@ public class MainController implements Initializable {
 
         // Theme
         darkThemeCheck.setOnAction(e -> toggleTheme());
+
+        // Auto-update output directory when app name changes
+        appNameField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null && !newValue.trim().isEmpty() && !newValue.equals(oldValue)) {
+                setOutputDirectoryFromAppName(newValue.trim());
+            }
+        });
 
         // Enable/disable JLink options
         enableJLinkCheck.setOnAction(e -> {
@@ -251,6 +266,114 @@ public class MainController implements Initializable {
         File file = fileChooser.showOpenDialog(jarFileField.getScene().getWindow());
         if (file != null) {
             jarFileField.setText(file.getAbsolutePath());
+            
+            // Auto-populate application fields based on JAR filename
+            populateFieldsFromJarFile(file);
+        }
+    }
+    
+    private void populateFieldsFromJarFile(File jarFile) {
+        try {
+            String fileName = jarFile.getName();
+            
+            // Remove .jar extension
+            if (fileName.toLowerCase().endsWith(".jar")) {
+                fileName = fileName.substring(0, fileName.length() - 4);
+            }
+            
+            // Extract application name and version
+            String appName = "";
+            String version = "";
+            
+            // Handle common patterns like "app-name-1.0.0" or "appname-version"
+            String[] parts = fileName.split("-");
+            if (parts.length >= 2) {
+                // Look for version pattern (numbers and dots)
+                for (int i = parts.length - 1; i >= 0; i--) {
+                    if (parts[i].matches("\\d+(\\.\\d+)*.*")) {
+                        // Found version, everything before is app name
+                        version = parts[i];
+                        appName = String.join("-", Arrays.copyOfRange(parts, 0, i));
+                        break;
+                    }
+                }
+                
+                // If no version found, treat the entire filename as app name
+                if (appName.isEmpty()) {
+                    appName = fileName; // Use the whole filename as app name
+                }
+            } else {
+                appName = fileName;
+            }
+            
+            // Format application name (convert to Title Case)
+            if (!appName.isEmpty()) {
+                appName = formatApplicationName(appName);
+                appNameField.setText(appName);
+                
+                // Set output directory based on app name
+                setOutputDirectoryFromAppName(appName);
+            }
+            
+            // Set version if found (always update)
+            if (!version.isEmpty()) {
+                versionField.setText(version);
+                log.info("Auto-populated version: '{}'", version);
+            }
+            
+            // Set default vendor (always update)
+            vendorField.setText("DevDam");
+            log.info("Auto-populated vendor: 'DevDam'");
+            
+            // Set application description from properties (always update)
+            descriptionArea.setText(applicationDescription);
+            log.info("Auto-populated description: '{}'", applicationDescription);
+            
+            log.info("Auto-populated fields from JAR file: {} -> App Name: '{}', Version: '{}'", 
+                    fileName, appName, version);
+                    
+        } catch (Exception e) {
+            log.warn("Could not auto-populate fields from JAR file: {}", jarFile.getName(), e);
+        }
+    }
+    
+    private String formatApplicationName(String name) {
+        // Replace hyphens and underscores with spaces
+        name = name.replace("-", " ").replace("_", " ");
+        
+        // Convert to title case
+        String[] words = name.split("\\s+");
+        StringBuilder formatted = new StringBuilder();
+        
+        for (String word : words) {
+            if (!word.isEmpty()) {
+                if (formatted.length() > 0) {
+                    formatted.append(" ");
+                }
+                formatted.append(Character.toUpperCase(word.charAt(0)));
+                if (word.length() > 1) {
+                    formatted.append(word.substring(1).toLowerCase());
+                }
+            }
+        }
+        
+        return formatted.toString();
+    }
+    
+    private void setOutputDirectoryFromAppName(String appName) {
+        try {
+            // Remove spaces and special characters for folder name
+            String folderName = appName.replaceAll("\\s+", "").replaceAll("[^a-zA-Z0-9]", "") + "BuildOutput";
+            
+            // Get current working directory or user home as base
+            String baseDir = System.getProperty("user.home");
+            Path outputPath = Paths.get(baseDir, "Desktop", folderName);
+            
+            outputDirField.setText(outputPath.toString());
+            log.info("Auto-set output directory: '{}'", outputPath.toString());
+            
+        } catch (Exception e) {
+            log.warn("Could not set output directory from app name: {}", appName, e);
         }
     }
 
@@ -326,9 +449,45 @@ public class MainController implements Initializable {
             logToConsole("Analysis completed successfully!");
             logToConsole("JAR: " + analysis.getJarPath());
 
+            // Auto-populate application fields from JAR filename (similar to file selection)
+            if (analysis.getJarPath() != null) {
+                try {
+                    File jarFile = new File(analysis.getJarPath());
+                    populateFieldsFromJarFile(jarFile);
+                    logToConsole("Auto-populated app config fields from JAR filename");
+                } catch (Exception e) {
+                    log.warn("Could not auto-populate fields from JAR filename during analysis", e);
+                }
+            }
+
             if (analysis.getMainClass() != null) {
                 mainClassField.setText(analysis.getMainClass());
                 logToConsole("Detected main class: " + analysis.getMainClass());
+            }
+            
+            // If there's a Start-Class, use it for vendor extraction and display
+            if (analysis.getStartClass() != null) {
+                mainClassField.setText(analysis.getStartClass());
+                logToConsole("Detected start class (using for main class): " + analysis.getStartClass());
+                
+                // Extract vendor from start class package
+                String vendorFromPackage = extractVendorFromMainClass(analysis.getStartClass());
+                if (vendorFromPackage != null && !vendorFromPackage.trim().isEmpty()) {
+                    vendorField.setText(vendorFromPackage);
+                    logToConsole("Set vendor from start class package: " + vendorFromPackage);
+                }
+            } else if (analysis.getMainClass() != null) {
+                // Fallback to main class for vendor extraction if no start class
+                String vendorFromPackage = extractVendorFromMainClass(analysis.getMainClass());
+                if (vendorFromPackage != null && !vendorFromPackage.trim().isEmpty()) {
+                    vendorField.setText(vendorFromPackage);
+                    logToConsole("Set vendor from main class package: " + vendorFromPackage);
+                }
+            }
+
+            // Populate app config fields from manifest information (this will override filename-based values if available)
+            if (analysis.hasManifestInfo()) {
+                populateAppConfigFromManifest(analysis);
             }
 
             if (analysis.hasRequiredModules()) {
@@ -351,6 +510,133 @@ public class MainController implements Initializable {
             logToConsole("Analysis failed: " + analysis.getErrorMessage());
             showAlert(Alert.AlertType.ERROR, "Analysis Failed", analysis.getErrorMessage());
         }
+    }
+    
+    private void populateAppConfigFromManifest(DependencyAnalysis analysis) {
+        logToConsole("Populating app config from manifest information...");
+        
+        // Prioritize Implementation-* attributes, fallback to Specification-* or Bundle-*
+        String appName = getFirstNonNull(analysis.getImplementationTitle(), 
+                                        analysis.getSpecificationTitle(),
+                                        analysis.getBundleName());
+        
+        String version = getFirstNonNull(analysis.getImplementationVersion(),
+                                        analysis.getSpecificationVersion(),
+                                        analysis.getBundleVersion());
+        
+        String vendor = getFirstNonNull(analysis.getImplementationVendor(),
+                                       analysis.getSpecificationVendor(),
+                                       analysis.getBundleVendor());
+        
+        String description = analysis.getBundleDescription();
+        
+        // Update fields if we have data and it's different/better than what we already have
+        if (appName != null && !appName.trim().isEmpty()) {
+            String currentAppName = appNameField.getText();
+            String manifestAppName = appName.trim();
+            
+            // Only update if manifest has a different/better app name than what we extracted from filename
+            if (currentAppName == null || currentAppName.trim().isEmpty() || 
+                (!manifestAppName.equals(currentAppName) && !manifestAppName.toLowerCase().contains("memzo-extracter"))) {
+                String formattedAppName = formatApplicationName(manifestAppName);
+                appNameField.setText(formattedAppName);
+                logToConsole("Set app name from manifest: " + formattedAppName);
+                
+                // Set output directory based on app name from manifest
+                setOutputDirectoryFromAppName(formattedAppName);
+            } else {
+                logToConsole("Keeping filename-based app name: " + currentAppName);
+            }
+        }
+        
+        if (version != null && !version.trim().isEmpty()) {
+            versionField.setText(version.trim());
+            logToConsole("Set app version from manifest: " + version.trim());
+        }
+        
+        if (vendor != null && !vendor.trim().isEmpty()) {
+            vendorField.setText(vendor.trim());
+            logToConsole("Set vendor from manifest: " + vendor.trim());
+        } else {
+            // Try to extract vendor from start class first, then main class if available
+            String classForVendor = analysis.getStartClass() != null ? analysis.getStartClass() : analysis.getMainClass();
+            if (classForVendor != null && !classForVendor.trim().isEmpty()) {
+                String vendorFromPackage = extractVendorFromMainClass(classForVendor);
+                if (vendorFromPackage != null && !vendorFromPackage.trim().isEmpty()) {
+                    vendorField.setText(vendorFromPackage);
+                    String classType = analysis.getStartClass() != null ? "start class" : "main class";
+                    logToConsole("Set vendor from " + classType + " package: " + vendorFromPackage);
+                }
+            }
+        }
+        
+        if (description != null && !description.trim().isEmpty()) {
+            descriptionArea.setText(description.trim());
+            logToConsole("Set description from manifest: " + description.trim());
+        }
+        
+        if (appName == null && version == null && vendor == null && description == null) {
+            logToConsole("No useful manifest information found for app config");
+        }
+    }
+    
+    private String getFirstNonNull(String... values) {
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value;
+            }
+        }
+        return null;
+    }
+    
+    private String extractVendorFromMainClass(String mainClass) {
+        try {
+            if (mainClass == null || mainClass.trim().isEmpty()) {
+                return null;
+            }
+            
+            // Split the main class by dots to get package parts
+            String[] parts = mainClass.split("\\.");
+            
+            // Look for common package patterns like com.vendor.app or org.vendor.app
+            if (parts.length >= 3) {
+                String firstPart = parts[0].toLowerCase();
+                
+                // Handle common package prefixes
+                if (firstPart.equals("com") || firstPart.equals("org") || firstPart.equals("net") || firstPart.equals("io")) {
+                    // Vendor is typically the second part
+                    String vendor = parts[1];
+                    return formatVendorName(vendor);
+                } else {
+                    // If no standard prefix, use the first part as vendor
+                    return formatVendorName(parts[0]);
+                }
+            } else if (parts.length >= 2) {
+                // For shorter packages, use the first part
+                return formatVendorName(parts[0]);
+            }
+            
+            return null;
+        } catch (Exception e) {
+            log.warn("Could not extract vendor from main class: {}", mainClass, e);
+            return null;
+        }
+    }
+    
+    private String formatVendorName(String vendor) {
+        if (vendor == null || vendor.trim().isEmpty()) {
+            return null;
+        }
+        
+        // Remove any special characters and numbers
+        vendor = vendor.replaceAll("[^a-zA-Z0-9]", "");
+        
+        if (vendor.isEmpty()) {
+            return null;
+        }
+        
+        // Convert to title case - first letter uppercase, rest lowercase
+        return Character.toUpperCase(vendor.charAt(0)) + vendor.substring(1).toLowerCase();
     }
 
     private void updateModulesList(Set<String> requiredModules) {

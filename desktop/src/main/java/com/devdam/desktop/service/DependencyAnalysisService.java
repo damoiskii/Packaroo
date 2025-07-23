@@ -11,6 +11,9 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
+import java.util.jar.Attributes;
 
 @Slf4j
 @Service
@@ -20,6 +23,10 @@ public class DependencyAnalysisService {
         log.info("Analyzing dependencies for JAR: {}", jarPath);
         
         try {
+            // Extract manifest info first
+            DependencyAnalysis.DependencyAnalysisBuilder builder = DependencyAnalysis.builder();
+            extractManifestInfo(jarPath, builder);
+            
             // Check if jdeps is available
             if (!isJdepsAvailable()) {
                 log.warn("jdeps is not available, using default module set");
@@ -27,13 +34,12 @@ public class DependencyAnalysisService {
                 Set<String> defaultModules = getDefaultJavaFXModules();
                 Set<String> availableModules = getAvailableModules();
                 
-                return DependencyAnalysis.builder()
+                return builder
                         .success(true)
                         .jarPath(jarPath.toString())
                         .requiredModules(defaultModules)
                         .availableModules(availableModules)
                         .missingModules(new HashSet<>())
-                        .mainClass(detectMainClass(jarPath))
                         .errorMessage("jdeps not available - using default JavaFX modules")
                         .build();
             }
@@ -42,15 +48,13 @@ public class DependencyAnalysisService {
             Set<String> requiredModules = getRequiredModules(jarPath);
             Set<String> availableModules = getAvailableModules();
             Set<String> missingModules = findMissingModules(requiredModules, availableModules);
-            String mainClass = detectMainClass(jarPath);
             
-            return DependencyAnalysis.builder()
+            return builder
                     .success(true)
                     .jarPath(jarPath.toString())
                     .requiredModules(requiredModules)
                     .availableModules(availableModules)
                     .missingModules(missingModules)
-                    .mainClass(mainClass)
                     .build();
                     
         } catch (Exception e) {
@@ -59,13 +63,15 @@ public class DependencyAnalysisService {
             Set<String> defaultModules = getDefaultJavaFXModules();
             Set<String> availableModules = getAvailableModules();
             
-            return DependencyAnalysis.builder()
+            DependencyAnalysis.DependencyAnalysisBuilder builder = DependencyAnalysis.builder();
+            extractManifestInfo(jarPath, builder);
+            
+            return builder
                     .success(true)
                     .jarPath(jarPath.toString())
                     .requiredModules(defaultModules)
                     .availableModules(availableModules)
                     .missingModules(new HashSet<>())
-                    .mainClass(detectMainClass(jarPath))
                     .errorMessage("Analysis failed, using default modules: " + e.getMessage())
                     .build();
         }
@@ -283,6 +289,43 @@ public class DependencyAnalysisService {
         }
         
         return null;
+    }
+    
+    private void extractManifestInfo(Path jarPath, DependencyAnalysis.DependencyAnalysisBuilder builder) {
+        try (JarFile jarFile = new JarFile(jarPath.toFile())) {
+            Manifest manifest = jarFile.getManifest();
+            if (manifest != null) {
+                Attributes mainAttributes = manifest.getMainAttributes();
+                
+                // Extract common manifest attributes
+                builder.implementationTitle(mainAttributes.getValue("Implementation-Title"))
+                       .implementationVersion(mainAttributes.getValue("Implementation-Version"))
+                       .implementationVendor(mainAttributes.getValue("Implementation-Vendor"))
+                       .specificationTitle(mainAttributes.getValue("Specification-Title"))
+                       .specificationVersion(mainAttributes.getValue("Specification-Version"))
+                       .specificationVendor(mainAttributes.getValue("Specification-Vendor"))
+                       .bundleName(mainAttributes.getValue("Bundle-Name"))
+                       .bundleVersion(mainAttributes.getValue("Bundle-Version"))
+                       .bundleVendor(mainAttributes.getValue("Bundle-Vendor"))
+                       .bundleDescription(mainAttributes.getValue("Bundle-Description"));
+                       
+                // Extract both Main-Class and Start-Class
+                String mainClass = mainAttributes.getValue("Main-Class");
+                String startClass = mainAttributes.getValue("Start-Class");
+                
+                builder.mainClass(mainClass).startClass(startClass);
+                       
+                log.info("Extracted manifest info from JAR: {}", jarPath.getFileName());
+                if (startClass != null) {
+                    log.info("Found Start-Class: {}", startClass);
+                }
+                if (mainClass != null) {
+                    log.info("Found Main-Class: {}", mainClass);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not extract manifest info from JAR: {}", jarPath, e);
+        }
     }
     
     private String extractMainClassFromManifest(Path jarPath) {
