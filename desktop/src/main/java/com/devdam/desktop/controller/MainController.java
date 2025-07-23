@@ -182,16 +182,12 @@ public class MainController implements Initializable {
     }
 
     private void updateUIFromConfiguration(PackageConfiguration config) {
-        if (config.getJarFile() != null) {
-            jarFileField.setText(config.getJarFile().toString());
-        }
-        if (config.getIconFile() != null) {
-            iconFileField.setText(config.getIconFile().toString());
-        }
-        if (config.getOutputDirectory() != null) {
-            outputDirField.setText(config.getOutputDirectory().toString());
-        }
+        // Clear or set file fields
+        jarFileField.setText(config.getJarFile() != null ? config.getJarFile().toString() : "");
+        iconFileField.setText(config.getIconFile() != null ? config.getIconFile().toString() : "");
+        outputDirField.setText(config.getOutputDirectory() != null ? config.getOutputDirectory().toString() : "");
 
+        // Clear or set application configuration fields
         appNameField.setText(config.getAppName() != null ? config.getAppName() : "");
         versionField.setText(config.getVersion() != null ? config.getVersion() : "");
         mainClassField.setText(config.getMainClass() != null ? config.getMainClass() : "");
@@ -199,25 +195,20 @@ public class MainController implements Initializable {
         descriptionArea.setText(config.getDescription() != null ? config.getDescription() : "");
         copyrightField.setText(config.getCopyright() != null ? config.getCopyright() : "");
 
-        if (config.getTargetPlatform() != null) {
-            targetPlatformCombo.setValue(config.getTargetPlatform());
-        }
-        if (config.getOutputFormat() != null) {
-            outputFormatCombo.setValue(config.getOutputFormat());
-        }
+        // Set platform and format (with defaults)
+        targetPlatformCombo.setValue(config.getTargetPlatform() != null ? config.getTargetPlatform() : PackageConfiguration.TargetPlatform.CURRENT);
+        outputFormatCombo.setValue(config.getOutputFormat() != null ? config.getOutputFormat() : PackageConfiguration.OutputFormat.APP_IMAGE);
 
+        // Set JLink configuration
         enableJLinkCheck.setSelected(config.isEnableJLink());
 
-        if (config.getJvmArgs() != null) {
-            jvmArgsArea.setText(String.join("\n", config.getJvmArgs()));
-        }
-        if (config.getAppArgs() != null) {
-            appArgsArea.setText(String.join("\n", config.getAppArgs()));
-        }
+        // Clear or set advanced options
+        jvmArgsArea.setText(config.getJvmArgs() != null ? String.join("\n", config.getJvmArgs()) : "");
+        appArgsArea.setText(config.getAppArgs() != null ? String.join("\n", config.getAppArgs()) : "");
 
-        // Update modules selection
+        // Clear and update modules selection
+        modulesListView.getCheckModel().clearChecks();
         if (config.getRequiredModules() != null) {
-            modulesListView.getCheckModel().clearChecks();
             for (String module : config.getRequiredModules()) {
                 int index = modulesListView.getItems().indexOf(module);
                 if (index >= 0) {
@@ -426,6 +417,7 @@ public class MainController implements Initializable {
             protected void succeeded() {
                 DependencyAnalysis analysis = getValue();
                 Platform.runLater(() -> {
+                    statusLabel.textProperty().unbind();
                     handleAnalysisResult(analysis);
                     statusLabel.setText("Analysis completed");
                 });
@@ -434,6 +426,7 @@ public class MainController implements Initializable {
             @Override
             protected void failed() {
                 Platform.runLater(() -> {
+                    statusLabel.textProperty().unbind();
                     logToConsole("Analysis failed: " + getException().getMessage());
                     statusLabel.setText("Analysis failed");
                 });
@@ -696,6 +689,7 @@ public class MainController implements Initializable {
             protected void succeeded() {
                 PackagingResult result = getValue();
                 Platform.runLater(() -> {
+                    statusLabel.textProperty().unbind();
                     handlePackagingResult(result);
                     progressBar.setVisible(false);
                     statusLabel.setText(result.isSuccess() ? "Packaging completed" : "Packaging failed");
@@ -705,6 +699,7 @@ public class MainController implements Initializable {
             @Override
             protected void failed() {
                 Platform.runLater(() -> {
+                    statusLabel.textProperty().unbind();
                     logToConsole("Packaging failed: " + getException().getMessage());
                     progressBar.setVisible(false);
                     statusLabel.setText("Packaging failed");
@@ -752,10 +747,38 @@ public class MainController implements Initializable {
     }
 
     private void resetForm() {
-        loadDefaultConfiguration();
+        // Clear all file fields
+        jarFileField.clear();
+        iconFileField.clear();
+        outputDirField.clear();
+        
+        // Clear all application configuration fields
+        appNameField.clear();
+        versionField.clear();
+        mainClassField.clear();
+        vendorField.clear();
+        descriptionArea.clear();
+        copyrightField.clear();
+        
+        // Reset platform and format to defaults
+        targetPlatformCombo.setValue(PackageConfiguration.TargetPlatform.CURRENT);
+        outputFormatCombo.setValue(PackageConfiguration.OutputFormat.APP_IMAGE);
+        
+        // Reset JLink configuration
+        enableJLinkCheck.setSelected(false);
+        modulesListView.getCheckModel().clearChecks();
+        customModuleField.clear();
+        
+        // Clear advanced options
+        jvmArgsArea.clear();
+        appArgsArea.clear();
+        
+        // Clear console and reset status
         consoleArea.clear();
         statusLabel.setText("Ready");
         progressBar.setVisible(false);
+        
+        log.info("Form reset to default values");
     }
 
     private void addCustomModule() {

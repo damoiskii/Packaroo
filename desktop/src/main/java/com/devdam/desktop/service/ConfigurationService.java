@@ -79,14 +79,9 @@ public class ConfigurationService {
     
     public PackageConfiguration getDefaultConfiguration() {
         return PackageConfiguration.builder()
-                .appName("MyApplication")
-                .version("1.0.0")
                 .targetPlatform(PackageConfiguration.TargetPlatform.CURRENT)
                 .outputFormat(PackageConfiguration.OutputFormat.APP_IMAGE)
                 .enableJLink(false)
-                .vendor("Unknown")
-                .description("Java Application")
-                .outputDirectory(Paths.get(System.getProperty("user.home"), "Desktop", "PackarooOutput"))
                 .build();
     }
 }
