@@ -22,10 +22,19 @@ public class DependencyAnalysisService {
         try {
             // Check if jdeps is available
             if (!isJdepsAvailable()) {
+                log.warn("jdeps is not available, using default module set");
+                // Return success with default modules instead of failing
+                Set<String> defaultModules = getDefaultJavaFXModules();
+                Set<String> availableModules = getAvailableModules();
+                
                 return DependencyAnalysis.builder()
-                        .success(false)
+                        .success(true)
                         .jarPath(jarPath.toString())
-                        .errorMessage("jdeps tool is not available. Please ensure JDK is properly installed.")
+                        .requiredModules(defaultModules)
+                        .availableModules(availableModules)
+                        .missingModules(new HashSet<>())
+                        .mainClass(detectMainClass(jarPath))
+                        .errorMessage("jdeps not available - using default JavaFX modules")
                         .build();
             }
             
@@ -46,11 +55,28 @@ public class DependencyAnalysisService {
                     
         } catch (Exception e) {
             log.error("Failed to analyze JAR dependencies", e);
+            // Return success with default modules instead of failing completely
+            Set<String> defaultModules = getDefaultJavaFXModules();
+            Set<String> availableModules = getAvailableModules();
+            
             return DependencyAnalysis.builder()
-                    .success(false)
+                    .success(true)
                     .jarPath(jarPath.toString())
-                    .errorMessage("Failed to analyze dependencies: " + e.getMessage())
+                    .requiredModules(defaultModules)
+                    .availableModules(availableModules)
+                    .missingModules(new HashSet<>())
+                    .mainClass(detectMainClass(jarPath))
+                    .errorMessage("Analysis failed, using default modules: " + e.getMessage())
                     .build();
+        }
+    }
+    
+    private Set<String> getAvailableModules() {
+        try {
+            return getAvailableModulesInternal();
+        } catch (Exception e) {
+            log.warn("Could not get available modules", e);
+            return new HashSet<>();
         }
     }
     
@@ -69,32 +95,145 @@ public class DependencyAnalysisService {
     private Set<String> getRequiredModules(Path jarPath) throws IOException, InterruptedException {
         Set<String> modules = new HashSet<>();
         
-        ProcessBuilder pb = new ProcessBuilder("jdeps", "--print-module-deps", jarPath.toString());
+        // First try with --ignore-missing-deps for Spring Boot fat JARs
+        ProcessBuilder pb = new ProcessBuilder("jdeps", "--print-module-deps", "--ignore-missing-deps", jarPath.toString());
         Process process = pb.start();
         
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+             BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+            
             String line;
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                if (!line.isEmpty()) {
+                if (!line.isEmpty() && !line.startsWith("Error:") && !line.contains("not found")) {
                     // Split by comma and add each module
                     String[] moduleArray = line.split(",");
                     for (String module : moduleArray) {
-                        modules.add(module.trim());
+                        String cleanModule = module.trim();
+                        // Filter out problematic modules that might not be available
+                        if (isModuleAvailable(cleanModule)) {
+                            modules.add(cleanModule);
+                        } else {
+                            log.debug("Skipping unavailable module: {}", cleanModule);
+                        }
                     }
                 }
+            }
+            
+            // Log error output for debugging but don't fail
+            while ((line = errorReader.readLine()) != null) {
+                log.debug("jdeps stderr: {}", line);
             }
         }
         
         int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            throw new RuntimeException("jdeps failed with exit code: " + exitCode);
+        
+        // If jdeps failed, fall back to default JavaFX modules
+        if (exitCode != 0 || modules.isEmpty()) {
+            log.warn("jdeps analysis failed or returned no modules, using default JavaFX modules");
+            modules = getDefaultJavaFXModules();
+        }
+        
+        // Ensure essential JavaFX modules are included if this is a JavaFX application
+        if (isJavaFXApplication(jarPath)) {
+            addEssentialJavaFXModules(modules);
         }
         
         return modules;
     }
     
-    private Set<String> getAvailableModules() throws IOException, InterruptedException {
+    private Set<String> getDefaultJavaFXModules() {
+        Set<String> modules = new HashSet<>();
+        String[] defaultModules = {
+            "java.base",
+            "java.desktop", 
+            "java.logging",
+            "java.management",
+            "java.naming",
+            "java.prefs",
+            "java.xml",
+            "javafx.controls",
+            "javafx.fxml",
+            "javafx.base",
+            "javafx.graphics"
+        };
+        
+        for (String module : defaultModules) {
+            if (isModuleAvailable(module)) {
+                modules.add(module);
+                log.debug("Added default module: {}", module);
+            }
+        }
+        
+        return modules;
+    }
+    
+    private boolean isModuleAvailable(String moduleName) {
+        try {
+            // Get list of available modules
+            Set<String> availableModules = getAvailableModules();
+            boolean available = availableModules.contains(moduleName);
+            
+            // Special handling for known problematic modules
+            if (!available && isProblematicModule(moduleName)) {
+                log.info("Module {} is not available in current runtime, skipping", moduleName);
+                return false;
+            }
+            
+            return available;
+        } catch (Exception e) {
+            log.warn("Could not check availability of module: {}", moduleName, e);
+            return false;
+        }
+    }
+    
+    private boolean isProblematicModule(String moduleName) {
+        // List of modules that are often problematic or not available in all distributions
+        return moduleName.equals("jdk.management.jfr") ||
+               moduleName.equals("jdk.jfr") ||
+               moduleName.equals("jdk.management.agent") ||
+               moduleName.startsWith("jdk.internal.") ||
+               moduleName.contains("incubator");
+    }
+    
+    private boolean isJavaFXApplication(Path jarPath) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("jar", "-tf", jarPath.toString());
+            Process process = pb.start();
+            
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("javafx") || line.contains("JavaFX")) {
+                        return true;
+                    }
+                }
+            }
+            process.waitFor();
+        } catch (Exception e) {
+            log.debug("Could not check if JAR is JavaFX application", e);
+        }
+        return false;
+    }
+    
+    private void addEssentialJavaFXModules(Set<String> modules) {
+        // Add essential JavaFX modules that might not be detected by jdeps
+        String[] essentialJavaFXModules = {
+            "javafx.controls",
+            "javafx.fxml",
+            "javafx.base",
+            "javafx.graphics"
+        };
+        
+        for (String module : essentialJavaFXModules) {
+            if (isModuleAvailable(module)) {
+                modules.add(module);
+                log.debug("Added essential JavaFX module: {}", module);
+            }
+        }
+    }
+    
+    private Set<String> getAvailableModulesInternal() throws IOException, InterruptedException {
         Set<String> modules = new HashSet<>();
         
         ProcessBuilder pb = new ProcessBuilder("java", "--list-modules");
@@ -171,7 +310,7 @@ public class DependencyAnalysisService {
     }
     
     public List<String> getSuggestedModules() {
-        // Common modules that are often needed
+        // Common modules that are often needed, focusing on safe, widely available modules
         return List.of(
                 "java.base",
                 "java.desktop",
@@ -182,6 +321,10 @@ public class DependencyAnalysisService {
                 "java.security.jgss",
                 "java.sql",
                 "java.xml",
+                "javafx.controls",
+                "javafx.fxml",
+                "javafx.base",
+                "javafx.graphics",
                 "jdk.crypto.ec",
                 "jdk.localedata",
                 "jdk.unsupported"

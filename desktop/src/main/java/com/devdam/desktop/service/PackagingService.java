@@ -11,7 +11,9 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -101,6 +103,13 @@ public class PackagingService {
         logs.add("Creating custom runtime with jlink...");
         logConsumer.accept("Creating custom runtime with jlink...");
         
+        // Validate and filter modules before using jlink
+        Set<String> validatedModules = validateAndFilterModules(config.getRequiredModules(), logs, logConsumer);
+        
+        if (validatedModules.isEmpty()) {
+            throw new RuntimeException("No valid modules found for jlink");
+        }
+        
         Path runtimePath = config.getOutputDirectory().resolve("runtime");
         
         // Delete existing runtime directory
@@ -111,7 +120,7 @@ public class PackagingService {
         List<String> command = new ArrayList<>();
         command.add("jlink");
         command.add("--add-modules");
-        command.add(String.join(",", config.getRequiredModules()));
+        command.add(String.join(",", validatedModules));
         command.add("--output");
         command.add(runtimePath.toString());
         command.add("--compress=2");
@@ -289,5 +298,57 @@ public class PackagingService {
             log.warn("jlink not available", e);
             return false;
         }
+    }
+    
+    private Set<String> validateAndFilterModules(Set<String> requiredModules, List<String> logs, Consumer<String> logConsumer) {
+        Set<String> validatedModules = new HashSet<>();
+        Set<String> availableModules = getAvailableModules();
+        
+        for (String module : requiredModules) {
+            if (isModuleSafe(module) && availableModules.contains(module)) {
+                validatedModules.add(module);
+                logs.add("Including module: " + module);
+            } else {
+                logs.add("Skipping unavailable or unsafe module: " + module);
+                logConsumer.accept("Skipping unavailable or unsafe module: " + module);
+            }
+        }
+        
+        // Ensure java.base is always included
+        validatedModules.add("java.base");
+        
+        return validatedModules;
+    }
+    
+    private Set<String> getAvailableModules() {
+        Set<String> modules = new HashSet<>();
+        try {
+            ProcessBuilder pb = new ProcessBuilder("java", "--list-modules");
+            Process process = pb.start();
+            
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if (!line.isEmpty() && line.contains("@")) {
+                        String moduleName = line.split("@")[0];
+                        modules.add(moduleName);
+                    }
+                }
+            }
+            process.waitFor();
+        } catch (Exception e) {
+            log.warn("Could not get available modules", e);
+        }
+        return modules;
+    }
+    
+    private boolean isModuleSafe(String moduleName) {
+        // Filter out known problematic modules
+        return !moduleName.equals("jdk.management.jfr") &&
+               !moduleName.equals("jdk.jfr") &&
+               !moduleName.equals("jdk.management.agent") &&
+               !moduleName.startsWith("jdk.internal.") &&
+               !moduleName.contains("incubator");
     }
 }

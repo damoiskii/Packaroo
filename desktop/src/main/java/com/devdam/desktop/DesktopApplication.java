@@ -14,13 +14,13 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 @Slf4j
 @SpringBootApplication
-public class PackarooApplication extends Application {
+public class DesktopApplication extends Application {
 
     private static ConfigurableApplicationContext context;
     private static String[] args;
 
     public static void main(String[] args) {
-        PackarooApplication.args = args;
+        DesktopApplication.args = args;
         System.setProperty("java.awt.headless", "false");
         System.setProperty("prism.lcdtext", "false");
         
@@ -31,7 +31,7 @@ public class PackarooApplication extends Application {
     @Override
     public void init() throws Exception {
         // Initialize Spring Boot context
-        context = SpringApplication.run(PackarooApplication.class, args);
+        context = SpringApplication.run(DesktopApplication.class, args);
         context.getAutowireCapableBeanFactory().autowireBean(this);
     }
 

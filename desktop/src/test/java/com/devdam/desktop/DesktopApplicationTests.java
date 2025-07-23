@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
     "spring.main.web-application-type=none",
     "java.awt.headless=true"
 })
-class PackarooApplicationTests {
+class DesktopApplicationTests {
 
     @Autowired
     private DependencyAnalysisService dependencyAnalysisService;
