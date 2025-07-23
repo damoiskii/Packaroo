@@ -113,8 +113,13 @@ public class MainController implements Initializable {
 
     private void initializeComponents() {
         // Initialize ComboBoxes
-        targetPlatformCombo.setItems(FXCollections.observableArrayList(PackageConfiguration.TargetPlatform.values()));
-        outputFormatCombo.setItems(FXCollections.observableArrayList(PackageConfiguration.OutputFormat.values()));
+        List<PackageConfiguration.TargetPlatform> sortedPlatforms = Arrays.asList(PackageConfiguration.TargetPlatform.values());
+        sortedPlatforms.sort((a, b) -> a.toString().compareToIgnoreCase(b.toString()));
+        targetPlatformCombo.setItems(FXCollections.observableArrayList(sortedPlatforms));
+        
+        List<PackageConfiguration.OutputFormat> sortedFormats = Arrays.asList(PackageConfiguration.OutputFormat.values());
+        sortedFormats.sort((a, b) -> a.toString().compareToIgnoreCase(b.toString()));
+        outputFormatCombo.setItems(FXCollections.observableArrayList(sortedFormats));
 
         // Set default values
         targetPlatformCombo.setValue(PackageConfiguration.TargetPlatform.CURRENT);
@@ -862,6 +867,7 @@ public class MainController implements Initializable {
 
     private void refreshPresets() {
         List<String> presets = configurationService.getAvailablePresets();
+        presets.sort(String::compareToIgnoreCase);
         presetsCombo.setItems(FXCollections.observableArrayList(presets));
     }
 
