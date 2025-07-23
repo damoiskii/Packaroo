@@ -304,6 +304,9 @@ public class MainController implements Initializable {
                 
                 // Set output directory based on app name
                 setOutputDirectoryFromAppName(appName);
+                
+                // Update preset name field with app name + "Config"
+                updatePresetNameField(appName);
             }
             
             // Set version if found (always update)
@@ -537,6 +540,9 @@ public class MainController implements Initializable {
                 
                 // Set output directory based on app name from manifest
                 setOutputDirectoryFromAppName(formattedAppName);
+                
+                // Update preset name field with app name + "Config"
+                updatePresetNameField(formattedAppName);
             } else {
                 logToConsole("Keeping filename-based app name: " + currentAppName);
             }
@@ -630,6 +636,13 @@ public class MainController implements Initializable {
         
         // Convert to title case - first letter uppercase, rest lowercase
         return Character.toUpperCase(vendor.charAt(0)) + vendor.substring(1).toLowerCase();
+    }
+
+    private void updatePresetNameField(String appName) {
+        if (appName != null && !appName.trim().isEmpty()) {
+            String presetName = appName.trim() + " Config";
+            presetNameField.setText(presetName);
+        }
     }
 
     private void updateModulesList(Set<String> requiredModules) {
