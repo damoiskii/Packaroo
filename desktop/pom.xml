@@ -8,11 +8,11 @@
 		<version>3.5.3</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.devdam</groupId>
-	<artifactId>desktop</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>desktop</name>
-	<description>Demo project for Spring Boot</description>
+		<groupId>com.devdam</groupId>
+	<artifactId>packaroo-desktop</artifactId>
+	<version>1.0.0</version>
+	<name>Packaroo</name>
+	<description>Cross-platform desktop application for Java packaging with jpackage and jlink</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -28,11 +28,49 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
+		<javafx.version>21.0.2</javafx.version>
+		<controlsfx.version>11.2.1</controlsfx.version>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
 	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+
+		<!-- JavaFX Dependencies -->
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-controls</artifactId>
+			<version>${javafx.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-fxml</artifactId>
+			<version>${javafx.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-base</artifactId>
+			<version>${javafx.version}</version>
+		</dependency>
+
+		<!-- ControlsFX for enhanced UI components -->
+		<dependency>
+			<groupId>org.controlsfx</groupId>
+			<artifactId>controlsfx</artifactId>
+			<version>${controlsfx.version}</version>
+		</dependency>
+
+		<!-- Jackson for JSON serialization -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
 		</dependency>
 
 		<dependency>
@@ -61,6 +99,17 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
+			
+			<!-- JavaFX Maven Plugin -->
+			<plugin>
+				<groupId>org.openjfx</groupId>
+				<artifactId>javafx-maven-plugin</artifactId>
+				<version>0.0.8</version>
+				<configuration>
+					<mainClass>com.devdam.desktop.PackarooApplication</mainClass>
+				</configuration>
+			</plugin>
+			
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -71,6 +120,7 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+					<mainClass>com.devdam.desktop.PackarooApplication</mainClass>
 				</configuration>
 			</plugin>
 		</plugins>
