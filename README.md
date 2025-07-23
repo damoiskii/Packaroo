@@ -144,18 +144,3 @@ Open an issue or contact us via [GitHub Discussions](https://github.com/youruser
 
 **Happy packing with Packaroo!** 🧳✨
 
-```
-
----
-
-### 🧩 Want to enhance it further?
-
-I can also generate:
-- `pom.xml` with JavaFX + Maven modules
-- Sample `jpackage` config templates
-- Cross-platform build instructions
-- App icon set
-
-Let me know how far along you are and I can help scaffold the repo.
-```
-
