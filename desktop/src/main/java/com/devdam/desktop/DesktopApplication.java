@@ -65,7 +65,7 @@ public class DesktopApplication extends Application {
             
             // Try to load icon, but don't fail if it's missing
             try {
-                var iconStream = getClass().getResourceAsStream("/images/packaroo-icon.png");
+                var iconStream = getClass().getResourceAsStream("/images/icon-512.png");
                 if (iconStream != null) {
                     splashStage.getIcons().add(new Image(iconStream));
                 }
@@ -105,7 +105,7 @@ public class DesktopApplication extends Application {
         
         // Try to load icon, but don't fail if it's missing
         try {
-            var iconStream = getClass().getResourceAsStream("/images/packaroo-icon.png");
+            var iconStream = getClass().getResourceAsStream("/images/icon.png");
             if (iconStream != null) {
                 primaryStage.getIcons().add(new Image(iconStream));
             }

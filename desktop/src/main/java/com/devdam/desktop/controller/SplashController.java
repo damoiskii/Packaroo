@@ -1,7 +1,10 @@
 package com.devdam.desktop.controller;
 
 import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.RotateTransition;
+import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -37,21 +40,29 @@ public class SplashController implements Initializable {
         versionLabel.setText("v1.0.0");
         statusLabel.setText("Loading...");
         
+        // Ensure all elements are initially visible
+        logoImageView.setOpacity(1.0);
+        titleLabel.setOpacity(1.0);
+        versionLabel.setOpacity(1.0);
+        statusLabel.setOpacity(1.0);
+        loadingProgressBar.setOpacity(1.0);
+        
         // Try to load icon, create a placeholder if not available
         setupLogo();
         
-        // Start animations
-        startAnimations();
-        
-        // Simulate loading progress
-        simulateLoading();
+        // Start animations with a slight delay to ensure everything is rendered
+        javafx.application.Platform.runLater(() -> {
+            startAnimations();
+            simulateLoading();
+        });
     }
 
     private void setupLogo() {
         try {
-            var iconStream = getClass().getResourceAsStream("/images/packaroo-icon.png");
+            var iconStream = getClass().getResourceAsStream("/images/icon-512.png");
             if (iconStream != null) {
                 logoImageView.setImage(new Image(iconStream));
+                log.info("Application icon loaded successfully");
             } else {
                 // Create a simple placeholder rectangle
                 Rectangle placeholder = new Rectangle(120, 120);
@@ -70,34 +81,30 @@ public class SplashController implements Initializable {
     }
 
     private void startAnimations() {
-        // Fade in animation for the logo
-        FadeTransition logoFade = new FadeTransition(Duration.seconds(1.5), logoImageView);
-        logoFade.setFromValue(0.0);
-        logoFade.setToValue(1.0);
+        log.info("Starting splash animations");
         
-        // Rotate animation for the logo
-        RotateTransition logoRotate = new RotateTransition(Duration.seconds(2), logoImageView);
-        logoRotate.setFromAngle(0);
-        logoRotate.setToAngle(360);
-        logoRotate.setCycleCount(1);
-        
-        // Fade in animation for title
-        FadeTransition titleFade = new FadeTransition(Duration.seconds(1), titleLabel);
-        titleFade.setFromValue(0.0);
-        titleFade.setToValue(1.0);
-        titleFade.setDelay(Duration.seconds(0.5));
-        
-        // Fade in animation for version
-        FadeTransition versionFade = new FadeTransition(Duration.seconds(1), versionLabel);
-        versionFade.setFromValue(0.0);
-        versionFade.setToValue(1.0);
-        versionFade.setDelay(Duration.seconds(1));
-        
-        // Start all animations
-        logoFade.play();
-        logoRotate.play();
-        titleFade.play();
-        versionFade.play();
+        try {
+            // Start elements with full opacity (remove fade-in for now)
+            logoImageView.setOpacity(1.0);
+            titleLabel.setOpacity(1.0);
+            versionLabel.setOpacity(1.0);
+            statusLabel.setOpacity(1.0);
+            loadingProgressBar.setOpacity(1.0);
+            
+            // Simple pulse animation for the logo
+            ScaleTransition logoScale = new ScaleTransition(Duration.seconds(1.5), logoImageView);
+            logoScale.setFromX(0.8);
+            logoScale.setFromY(0.8);
+            logoScale.setToX(1.0);
+            logoScale.setToY(1.0);
+            logoScale.setCycleCount(Timeline.INDEFINITE);
+            logoScale.setAutoReverse(true);
+            logoScale.play();
+            
+            log.info("Splash animations started successfully");
+        } catch (Exception e) {
+            log.error("Error starting animations", e);
+        }
     }
 
     private void simulateLoading() {
