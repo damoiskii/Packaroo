@@ -132,7 +132,7 @@ Pull requests are welcome! Please open an issue first to discuss major changes o
 
 ## 📄 License
 
-MIT License
+Apache 2.0 License
 
 ---
 
