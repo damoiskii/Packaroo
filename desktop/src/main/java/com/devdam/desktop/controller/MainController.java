@@ -219,7 +219,8 @@ public class MainController implements Initializable {
         versionField.setText(config.getVersion() != null ? config.getVersion() : "");
         mainClassField.setText(config.getMainClass() != null ? config.getMainClass() : "");
         vendorField.setText(config.getVendor() != null ? config.getVendor() : "");
-        descriptionArea.setText(config.getDescription() != null ? config.getDescription() : "");
+        // Keep description field blank - don't auto-populate from loaded config/preset
+        // descriptionArea.setText(config.getDescription() != null ? config.getDescription() : "");
         copyrightField.setText(config.getCopyright() != null ? config.getCopyright() : "");
 
         // Set platform and format (with defaults)
@@ -346,9 +347,9 @@ public class MainController implements Initializable {
             vendorField.setText("DevDam");
             log.info("Auto-populated vendor: 'DevDam'");
             
-            // Set application description from properties (always update)
-            descriptionArea.setText(applicationDescription);
-            log.info("Auto-populated description: '{}'", applicationDescription);
+            // Keep description field blank - don't auto-populate
+            // descriptionArea.setText(applicationDescription);
+            // log.info("Auto-populated description: '{}'", applicationDescription);
             
             log.info("Auto-populated fields from JAR file: {} -> App Name: '{}', Version: '{}'", 
                     fileName, appName, version);
@@ -596,10 +597,11 @@ public class MainController implements Initializable {
             }
         }
         
-        if (description != null && !description.trim().isEmpty()) {
-            descriptionArea.setText(description.trim());
-            logToConsole("Set description from manifest: " + description.trim());
-        }
+        // Keep description field blank - don't auto-populate
+        // if (description != null && !description.trim().isEmpty()) {
+        //     descriptionArea.setText(description.trim());
+        //     logToConsole("Set description from manifest: " + description.trim());
+        // }
         
         if (appName == null && version == null && vendor == null && description == null) {
             logToConsole("No useful manifest information found for app config");
@@ -1030,9 +1032,9 @@ public class MainController implements Initializable {
         // Set default filename based on app name
         String appName = appNameField.getText();
         if (appName != null && !appName.trim().isEmpty()) {
-            fileChooser.setInitialFileName(appName.trim() + "_config.json");
+            fileChooser.setInitialFileName(appName.trim() + " Config.json");
         } else {
-            fileChooser.setInitialFileName("packaroo_config.json");
+            fileChooser.setInitialFileName("packaroo Config.json");
         }
         
         java.io.File file = fileChooser.showSaveDialog(appNameField.getScene().getWindow());
