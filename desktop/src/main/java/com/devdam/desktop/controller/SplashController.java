@@ -12,6 +12,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Component;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.prefs.Preferences;
 
 @Slf4j
 @Component
@@ -34,6 +36,11 @@ public class SplashController implements Initializable {
     @FXML private Label versionLabel;
     @FXML private ProgressBar loadingProgressBar;
     @FXML private Label statusLabel;
+    @FXML private VBox rootContainer;
+
+    // Preferences for theme persistence (use same node as MainController)
+    private static final Preferences prefs = Preferences.userRoot().node("com/devdam/desktop/theme");
+    private static final String DARK_THEME_KEY = "darkTheme";
 
     // Application properties
     @Value("${application.title}")
@@ -60,6 +67,9 @@ public class SplashController implements Initializable {
         
         // Try to load icon, create a placeholder if not available
         setupLogo();
+        
+        // Load and apply theme preference
+        loadThemePreference();
         
         // Start animations with a slight delay to ensure everything is rendered
         javafx.application.Platform.runLater(() -> {
@@ -222,5 +232,25 @@ public class SplashController implements Initializable {
         
         timeline.getKeyFrames().addAll(keyFrame1, keyFrame2, keyFrame3, keyFrame4);
         timeline.play();
+    }
+    
+    private void loadThemePreference() {
+        // Load saved theme preference (default to false/light theme)
+        boolean isDarkTheme = prefs.getBoolean(DARK_THEME_KEY, false);
+        
+        // Apply the theme to the splash screen
+        applyTheme(isDarkTheme);
+    }
+    
+    private void applyTheme(boolean isDarkTheme) {
+        if (rootContainer != null) {
+            if (isDarkTheme) {
+                if (!rootContainer.getStyleClass().contains("dark-theme")) {
+                    rootContainer.getStyleClass().add("dark-theme");
+                }
+            } else {
+                rootContainer.getStyleClass().removeAll("dark-theme");
+            }
+        }
     }
 }

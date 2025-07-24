@@ -21,10 +21,10 @@
     -fx-background: #16213e;
     -fx-control-inner-background: rgba(26, 26, 46, 0.9);
     -fx-accent: #6DC7FF;
-    -fx-default-button: #C822FF;
+    -fx-default-button: #1A6DFF;
     -fx-focus-color: #6DC7FF;
     -fx-faint-focus-color: #6DC7FF44;
-    -fx-selection-bar: #C822FF;
+    -fx-selection-bar: #1A6DFF;
 }
 
 /* ===== MAIN CONTAINER ===== */
@@ -36,7 +36,7 @@
 /* ===== SPLASH SCREEN ===== */
 .splash-container {
     -fx-background-color: rgba(255, 255, 255, 0.95);
-    -fx-border-color: #1A6DFF;
+    /* -fx-border-color: #1A6DFF; */
     -fx-border-width: 2px;
     -fx-border-radius: 10px;
     -fx-background-radius: 10px;
@@ -61,6 +61,27 @@
     -fx-text-fill: #333333;
     -fx-font-size: 14px;
     -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.8), 2, 0, 0, 1);
+}
+
+/* Dark Theme Splash Overrides */
+.root.dark-theme .splash-container {
+    -fx-background-color: rgba(11, 11, 20, 0.95);
+    -fx-effect: dropshadow(gaussian, rgba(109, 199, 255, 0.4), 15, 0, 0, 8);
+}
+
+.root.dark-theme .splash-title {
+    -fx-text-fill: #6DC7FF;
+    -fx-effect: dropshadow(gaussian, rgba(26, 26, 46, 0.8), 4, 0, 0, 2);
+}
+
+.root.dark-theme .splash-version {
+    -fx-text-fill: #E6ABFF;
+    -fx-effect: dropshadow(gaussian, rgba(26, 26, 46, 0.6), 3, 0, 0, 1);
+}
+
+.root.dark-theme .splash-status {
+    -fx-text-fill: #cccccc;
+    -fx-effect: dropshadow(gaussian, rgba(26, 26, 46, 0.8), 2, 0, 0, 1);
 }
 
 /* ===== HEADERS ===== */
@@ -365,6 +386,24 @@
 
 .menu-bar .menu .label {
     -fx-text-fill: #323130;
+}
+
+/* Dark Theme Menu Bar Overrides */
+.root.dark-theme .menu-bar {
+    -fx-background-color: rgba(23, 23, 41, 0.95);
+    -fx-border-color: #444444;
+}
+
+.root.dark-theme .menu-bar .menu {
+    -fx-background-color: transparent;
+}
+
+.root.dark-theme .menu-bar .menu:hover {
+    -fx-background-color: rgba(109, 199, 255, 0.1);
+}
+
+.root.dark-theme .menu-bar .menu .label {
+    -fx-text-fill: #cccccc;
 }
 
 /* ===== SPLIT PANE ===== */

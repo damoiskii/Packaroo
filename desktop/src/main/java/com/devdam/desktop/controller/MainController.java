@@ -28,6 +28,7 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.prefs.Preferences;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -93,6 +94,10 @@ public class MainController implements Initializable {
     // Theme
     @FXML private CheckMenuItem darkThemeCheck;
     @FXML private VBox rootPane;
+    
+    // Preferences for theme persistence
+    private static final Preferences prefs = Preferences.userRoot().node("com/devdam/desktop/theme");
+    private static final String DARK_THEME_KEY = "darkTheme";
 
     // Menu Items
     @FXML private MenuItem newConfigMenuItem;
@@ -156,6 +161,9 @@ public class MainController implements Initializable {
 
         // Set initial status
         statusLabel.setText("Ready");
+        
+        // Load saved theme preference
+        loadThemePreference();
     }
 
     private void setupEventHandlers() {
@@ -922,9 +930,38 @@ public class MainController implements Initializable {
     }
 
     private void toggleTheme() {
-        // This will be implemented with CSS switching
-        // For now, just log the action
-        logToConsole("Theme toggle: " + (darkThemeCheck.isSelected() ? "Dark" : "Light"));
+        boolean isDarkTheme = darkThemeCheck.isSelected();
+        
+        // Save theme preference
+        prefs.putBoolean(DARK_THEME_KEY, isDarkTheme);
+        
+        // Apply theme
+        applyTheme(isDarkTheme);
+        
+        logToConsole("Theme toggle: " + (isDarkTheme ? "Dark" : "Light"));
+    }
+    
+    private void loadThemePreference() {
+        // Load saved theme preference (default to false/light theme)
+        boolean isDarkTheme = prefs.getBoolean(DARK_THEME_KEY, false);
+        
+        // Set the checkbox state
+        darkThemeCheck.setSelected(isDarkTheme);
+        
+        // Apply the theme
+        applyTheme(isDarkTheme);
+    }
+    
+    private void applyTheme(boolean isDarkTheme) {
+        if (rootPane != null) {
+            if (isDarkTheme) {
+                if (!rootPane.getStyleClass().contains("dark-theme")) {
+                    rootPane.getStyleClass().add("dark-theme");
+                }
+            } else {
+                rootPane.getStyleClass().removeAll("dark-theme");
+            }
+        }
     }
 
     private void updateToolAvailability() {
