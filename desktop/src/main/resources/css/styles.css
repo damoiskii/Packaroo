@@ -79,6 +79,10 @@
 
 /* ===== BUTTONS ===== */
 .button {
+    -fx-background-color: rgba(109, 199, 255, 0.1);
+    -fx-border-color: #6DC7FF;
+    -fx-border-width: 1px;
+    -fx-text-fill: #1A6DFF;
     -fx-background-radius: 8px;
     -fx-border-radius: 8px;
     -fx-padding: 8px 16px;
@@ -87,6 +91,8 @@
 }
 
 .button:hover {
+    -fx-background-color: rgba(230, 171, 255, 0.2);
+    -fx-border-color: #C822FF;
     -fx-effect: dropshadow(gaussian, rgba(26, 109, 255, 0.4), 6, 0, 0, 3);
     -fx-scale-x: 1.02;
     -fx-scale-y: 1.02;
