@@ -84,4 +84,20 @@ public class ConfigurationService {
                 .enableJLink(false)
                 .build();
     }
+
+    public void saveConfigurationToFile(PackageConfiguration config, String filePath) throws IOException {
+        objectMapper.writeValue(new java.io.File(filePath), config);
+        log.info("Saved configuration to file: {}", filePath);
+    }
+
+    public PackageConfiguration loadConfigurationFromFile(String filePath) throws IOException {
+        java.io.File file = new java.io.File(filePath);
+        if (!file.exists()) {
+            throw new IOException("Configuration file not found: " + filePath);
+        }
+        
+        PackageConfiguration config = objectMapper.readValue(file, PackageConfiguration.class);
+        log.info("Loaded configuration from file: {}", filePath);
+        return config;
+    }
 }

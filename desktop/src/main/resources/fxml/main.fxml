@@ -12,19 +12,19 @@
          <menus>
             <Menu mnemonicParsing="false" text="File">
                <items>
-                  <MenuItem mnemonicParsing="false" text="New Configuration" />
-                  <MenuItem mnemonicParsing="false" text="Open Configuration" />
-                  <MenuItem mnemonicParsing="false" text="Save Configuration" />
+                  <MenuItem fx:id="newConfigMenuItem" mnemonicParsing="false" text="New Configuration" />
+                  <MenuItem fx:id="openConfigMenuItem" mnemonicParsing="false" text="Open Configuration" />
+                  <MenuItem fx:id="saveConfigMenuItem" mnemonicParsing="false" text="Save Configuration" />
                   <SeparatorMenuItem mnemonicParsing="false" />
-                  <MenuItem mnemonicParsing="false" text="Exit" />
+                  <MenuItem fx:id="exitMenuItem" mnemonicParsing="false" text="Exit" />
                </items>
             </Menu>
             <Menu mnemonicParsing="false" text="Tools">
                <items>
-                  <MenuItem mnemonicParsing="false" text="Analyze JAR" />
-                  <MenuItem mnemonicParsing="false" text="Package Application" />
+                  <MenuItem fx:id="analyzeJarMenuItem" mnemonicParsing="false" text="Analyze JAR" />
+                  <MenuItem fx:id="packageAppMenuItem" mnemonicParsing="false" text="Package Application" />
                   <SeparatorMenuItem mnemonicParsing="false" />
-                  <MenuItem mnemonicParsing="false" text="Clear Console" />
+                  <MenuItem fx:id="clearConsoleMenuItem" mnemonicParsing="false" text="Clear Console" />
                </items>
             </Menu>
             <Menu mnemonicParsing="false" text="View">
@@ -34,7 +34,7 @@
             </Menu>
             <Menu mnemonicParsing="false" text="Help">
                <items>
-                  <MenuItem mnemonicParsing="false" text="About" />
+                  <MenuItem fx:id="aboutMenuItem" mnemonicParsing="false" text="About" />
                </items>
             </Menu>
          </menus>

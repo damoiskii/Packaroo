@@ -85,6 +85,16 @@ public class MainController implements Initializable {
     @FXML private CheckMenuItem darkThemeCheck;
     @FXML private VBox rootPane;
 
+    // Menu Items
+    @FXML private MenuItem newConfigMenuItem;
+    @FXML private MenuItem openConfigMenuItem;
+    @FXML private MenuItem saveConfigMenuItem;
+    @FXML private MenuItem exitMenuItem;
+    @FXML private MenuItem analyzeJarMenuItem;
+    @FXML private MenuItem packageAppMenuItem;
+    @FXML private MenuItem clearConsoleMenuItem;
+    @FXML private MenuItem aboutMenuItem;
+
     @Autowired
     private DependencyAnalysisService dependencyService;
 
@@ -164,6 +174,9 @@ public class MainController implements Initializable {
 
         // Theme
         darkThemeCheck.setOnAction(e -> toggleTheme());
+
+        // Menu Items
+        setupMenuHandlers();
 
         // Auto-update output directory when app name changes
         appNameField.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -934,5 +947,122 @@ public class MainController implements Initializable {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private void setupMenuHandlers() {
+        // File Menu
+        newConfigMenuItem.setOnAction(e -> newConfiguration());
+        openConfigMenuItem.setOnAction(e -> openConfiguration());
+        saveConfigMenuItem.setOnAction(e -> saveConfiguration());
+        exitMenuItem.setOnAction(e -> exitApplication());
+
+        // Tools Menu
+        analyzeJarMenuItem.setOnAction(e -> analyzeJar());
+        packageAppMenuItem.setOnAction(e -> packageApplication());
+        clearConsoleMenuItem.setOnAction(e -> consoleArea.clear());
+
+        // Help Menu
+        aboutMenuItem.setOnAction(e -> showAboutDialog());
+    }
+
+    // File Menu Actions
+    private void newConfiguration() {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("New Configuration");
+        confirmation.setHeaderText("Create New Configuration");
+        confirmation.setContentText("This will reset all current settings. Continue?");
+        
+        confirmation.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                resetForm();
+                logToConsole("New configuration created");
+            }
+        });
+    }
+
+    private void openConfiguration() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Configuration");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("JSON Files", "*.json")
+        );
+        
+        java.io.File file = fileChooser.showOpenDialog(appNameField.getScene().getWindow());
+        if (file != null) {
+            try {
+                PackageConfiguration config = configurationService.loadConfigurationFromFile(file.getAbsolutePath());
+                currentConfig = config;
+                updateUIFromConfiguration(config);
+                logToConsole("Configuration loaded from: " + file.getName());
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Configuration loaded successfully!");
+            } catch (Exception ex) {
+                logToConsole("Error loading configuration: " + ex.getMessage());
+                showAlert(Alert.AlertType.ERROR, "Error", "Failed to load configuration: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void saveConfiguration() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Configuration");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("JSON Files", "*.json")
+        );
+        
+        // Set default filename based on app name
+        String appName = appNameField.getText();
+        if (appName != null && !appName.trim().isEmpty()) {
+            fileChooser.setInitialFileName(appName.trim() + "_config.json");
+        } else {
+            fileChooser.setInitialFileName("packaroo_config.json");
+        }
+        
+        java.io.File file = fileChooser.showSaveDialog(appNameField.getScene().getWindow());
+        if (file != null) {
+            try {
+                PackageConfiguration config = getConfigurationFromUI();
+                configurationService.saveConfigurationToFile(config, file.getAbsolutePath());
+                logToConsole("Configuration saved to: " + file.getName());
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Configuration saved successfully!");
+            } catch (Exception ex) {
+                logToConsole("Error saving configuration: " + ex.getMessage());
+                showAlert(Alert.AlertType.ERROR, "Error", "Failed to save configuration: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void exitApplication() {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Exit Application");
+        confirmation.setHeaderText("Exit Packaroo");
+        confirmation.setContentText("Are you sure you want to exit?");
+        
+        confirmation.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                Platform.exit();
+                System.exit(0);
+            }
+        });
+    }
+
+    // Help Menu Actions
+    private void showAboutDialog() {
+        Alert about = new Alert(Alert.AlertType.INFORMATION);
+        about.setTitle("About Packaroo");
+        about.setHeaderText("Packaroo Desktop");
+        about.setContentText(
+            "Version: 1.0.0\n" +
+            "A modern JavaFX application packaging tool\n\n" +
+            "Features:\n" +
+            "• JAR dependency analysis\n" +
+            "• Custom JLink runtime creation\n" +
+            "• Native application packaging\n" +
+            "• Cross-platform support\n\n" +
+            "Built with JavaFX and Spring Boot\n" +
+            "© 2025 DevDam"
+        );
+        about.setResizable(true);
+        about.getDialogPane().setPrefWidth(400);
+        about.showAndWait();
     }
 }
