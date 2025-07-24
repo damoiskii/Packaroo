@@ -251,8 +251,8 @@ public class MainController implements Initializable {
         versionField.setText(config.getVersion() != null ? config.getVersion() : "");
         mainClassField.setText(config.getMainClass() != null ? config.getMainClass() : "");
         vendorField.setText(config.getVendor() != null ? config.getVendor() : "");
-        // Keep description field blank - don't auto-populate from loaded config/preset
-        // descriptionArea.setText(config.getDescription() != null ? config.getDescription() : "");
+        // Populate description field from loaded config/preset if available
+        descriptionArea.setText(config.getDescription() != null ? config.getDescription() : "");
         copyrightField.setText(config.getCopyright() != null ? config.getCopyright() : "");
 
         // Set platform and format (with defaults)
@@ -633,11 +633,11 @@ public class MainController implements Initializable {
             }
         }
         
-        // Keep description field blank - don't auto-populate
-        // if (description != null && !description.trim().isEmpty()) {
-        //     descriptionArea.setText(description.trim());
-        //     logToConsole("Set description from manifest: " + description.trim());
-        // }
+        // Populate description field from manifest if available
+        if (description != null && !description.trim().isEmpty()) {
+            descriptionArea.setText(description.trim());
+            consoleLogger.info("CONFIG", "Set description from manifest: " + description.trim());
+        }
         
         if (appName == null && version == null && vendor == null && description == null) {
             consoleLogger.warning("CONFIG", "No useful manifest information found for app config");
