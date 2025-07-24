@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.web.WebView?>
+
+<VBox fx:id="rootPane" prefHeight="800.0" prefWidth="1200.0" styleClass="main-container" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.devdam.desktop.controller.SetupGuideController">
+   <children>
+      <!-- Menu Bar -->
+      <MenuBar>
+         <menus>
+            <Menu mnemonicParsing="false" text="File">
+               <items>
+                  <MenuItem fx:id="newConfigMenuItem" mnemonicParsing="false" text="New Configuration" />
+                  <MenuItem fx:id="openConfigMenuItem" mnemonicParsing="false" text="Open Configuration" />
+                  <MenuItem fx:id="saveConfigMenuItem" mnemonicParsing="false" text="Save Configuration" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="exitMenuItem" mnemonicParsing="false" text="Exit" />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Tools">
+               <items>
+                  <MenuItem fx:id="analyzeJarMenuItem" mnemonicParsing="false" text="Analyze JAR" />
+                  <MenuItem fx:id="packageAppMenuItem" mnemonicParsing="false" text="Package Application" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="clearConsoleMenuItem" mnemonicParsing="false" text="Clear Console" />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="View">
+               <items>
+                  <CheckMenuItem fx:id="darkThemeCheck" mnemonicParsing="false" text="Dark Theme" />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Help">
+               <items>
+                  <MenuItem fx:id="aboutMenuItem" mnemonicParsing="false" text="About" />
+                  <MenuItem fx:id="setupMenuItem" mnemonicParsing="false" text="Setup Guide" />
+               </items>
+            </Menu>
+         </menus>
+      </MenuBar>
+
+      <!-- Header -->
+      <HBox alignment="CENTER" spacing="20.0" styleClass="header-container">
+         <children>
+            <Label styleClass="header-title" text="Java Tools Setup Guide" />
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
+         </padding>
+      </HBox>
+
+      <!-- Setup Guide Content -->
+      <ScrollPane fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS">
+         <content>
+            <VBox spacing="0.0">
+               <children>
+                  <WebView fx:id="setupWebView" prefHeight="600.0" />
+               </children>
+               <padding>
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="10.0" />
+               </padding>
+            </VBox>
+         </content>
+      </ScrollPane>
+
+      <!-- Footer -->
+      <HBox alignment="CENTER" spacing="20.0" styleClass="footer-container">
+         <children>
+            <Button fx:id="backToMainButton" styleClass="action-button" text="← Back to Main" />
+         </children>
+         <padding>
+            <Insets bottom="15.0" left="20.0" right="20.0" top="15.0" />
+         </padding>
+      </HBox>
+   </children>
+</VBox>

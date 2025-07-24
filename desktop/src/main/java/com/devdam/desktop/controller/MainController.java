@@ -6,12 +6,14 @@ import com.devdam.desktop.model.PackagingResult;
 import com.devdam.desktop.service.ConfigurationService;
 import com.devdam.desktop.service.DependencyAnalysisService;
 import com.devdam.desktop.service.PackagingService;
+import com.devdam.desktop.service.ViewManager;
 import javafx.application.Platform;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
@@ -107,7 +109,9 @@ public class MainController implements Initializable {
     @FXML private MenuItem analyzeJarMenuItem;
     @FXML private MenuItem packageAppMenuItem;
     @FXML private MenuItem clearConsoleMenuItem;
+    @FXML private MenuItem setupMenuItem;
     @FXML private MenuItem aboutMenuItem;
+    @FXML private MenuItem backToMainMenuItem;
 
     @Autowired
     private DependencyAnalysisService dependencyService;
@@ -118,6 +122,9 @@ public class MainController implements Initializable {
     @Autowired
     private ConfigurationService configurationService;
 
+    @Autowired
+    private ViewManager viewManager;
+
     // Application properties
     @Value("${application.description}")
     private String applicationDescription;
@@ -126,6 +133,9 @@ public class MainController implements Initializable {
     private String applicationVersion;
 
     private PackageConfiguration currentConfig;
+    
+    // View management
+    private boolean isSetupGuideViewActive = false;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -133,6 +143,9 @@ public class MainController implements Initializable {
         loadDefaultConfiguration();
         refreshPresets();
         updateToolAvailability();
+        
+        // Initialize menu visibility
+        updateMenuVisibility();
     }
 
     private void initializeComponents() {
@@ -1017,7 +1030,13 @@ public class MainController implements Initializable {
         clearConsoleMenuItem.setOnAction(e -> consoleArea.clear());
 
         // Help Menu
+        setupMenuItem.setOnAction(e -> showSetupGuideView());
         aboutMenuItem.setOnAction(e -> showAboutDialog());
+        
+        // View Menu
+        if (backToMainMenuItem != null) {
+            backToMainMenuItem.setOnAction(e -> showMainView());
+        }
     }
 
     // File Menu Actions
@@ -1121,6 +1140,39 @@ public class MainController implements Initializable {
         about.showAndWait();
     }
 
+    private void showSetupGuideView() {
+        viewManager.showSetupGuide();
+    }
+    
+    private void showMainView() {
+        // Reload the main view by creating a new scene
+        try {
+            Platform.runLater(() -> {
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
+                    VBox newMainView = loader.load();
+                    
+                    // Replace the scene root
+                    rootPane.getScene().setRoot(newMainView);
+                    
+                } catch (Exception e) {
+                    log.error("Failed to load main view", e);
+                }
+            });
+            
+        } catch (Exception e) {
+            log.error("Failed to show main view", e);
+            showAlert(Alert.AlertType.ERROR, "Error", "Failed to return to main view: " + e.getMessage());
+        }
+    }
+    
+    private void updateMenuVisibility() {
+        // Show/hide back to main menu item based on current view
+        if (backToMainMenuItem != null) {
+            backToMainMenuItem.setVisible(isSetupGuideViewActive);
+        }
+    }
+    
     // Animated Progress Bar Methods
     private void startAnimatedProgressBar() {
         // Stop any existing animation

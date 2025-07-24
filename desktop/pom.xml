@@ -55,6 +55,11 @@
 			<artifactId>javafx-base</artifactId>
 			<version>${javafx.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-web</artifactId>
+			<version>${javafx.version}</version>
+		</dependency>
 
 		<!-- ControlsFX for enhanced UI components -->
 		<dependency>

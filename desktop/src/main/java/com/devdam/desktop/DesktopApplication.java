@@ -1,5 +1,6 @@
 package com.devdam.desktop;
 
+import com.devdam.desktop.service.ViewManager;
 import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -98,6 +99,10 @@ public class DesktopApplication extends Application {
     }
 
     private void showMainApplication(Stage primaryStage) throws Exception {
+        // Initialize ViewManager with the primary stage
+        ViewManager viewManager = context.getBean(ViewManager.class);
+        viewManager.setPrimaryStage(primaryStage);
+        
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
         loader.setControllerFactory(context::getBean);
         Parent root = loader.load();

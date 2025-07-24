@@ -30,11 +30,13 @@
             <Menu mnemonicParsing="false" text="View">
                <items>
                   <CheckMenuItem fx:id="darkThemeCheck" mnemonicParsing="false" text="Dark Theme" />
+                  <MenuItem fx:id="backToMainMenuItem" mnemonicParsing="false" text="Back to Main" visible="false" />
                </items>
             </Menu>
             <Menu mnemonicParsing="false" text="Help">
                <items>
                   <MenuItem fx:id="aboutMenuItem" mnemonicParsing="false" text="About" />
+                  <MenuItem fx:id="setupMenuItem" mnemonicParsing="false" text="Setup Guide" />           
                </items>
             </Menu>
          </menus>
