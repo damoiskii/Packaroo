@@ -2,6 +2,7 @@
 .root {
     -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     -fx-font-size: 13px;
+    -fx-animation-duration: 150ms;
     
     /* Custom Color Palette */
     -fx-base: #f8faff;
@@ -170,6 +171,14 @@
     -fx-border-width: 1px;
     -fx-border-radius: 5px;
     -fx-background-radius: 5px;
+    -fx-animated: true;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 2, 0, 0, 1);
+    -fx-cache: true;
+    -fx-cache-hint: speed;
+}
+
+.titled-pane:expanded {
+    -fx-effect: dropshadow(gaussian, rgba(26, 109, 255, 0.2), 4, 0, 0, 2);
 }
 
 .titled-pane > .title {
@@ -178,6 +187,14 @@
     -fx-border-color: #d1d1d1;
     -fx-border-width: 0 0 1px 0;
     -fx-padding: 8px 12px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 1, 0, 0, 1);
+    -fx-cache: true;
+}
+
+.titled-pane > .title:hover {
+    -fx-background-color: #e8e6e4;
+    -fx-effect: dropshadow(gaussian, rgba(26, 109, 255, 0.15), 2, 0, 0, 1);
 }
 
 .titled-pane > .title > .text {
@@ -188,6 +205,8 @@
 .titled-pane > .content {
     -fx-background-color: white;
     -fx-border-color: transparent;
+    -fx-cache: true;
+    -fx-cache-hint: speed;
 }
 
 /* ===== PROGRESS BAR ===== */
