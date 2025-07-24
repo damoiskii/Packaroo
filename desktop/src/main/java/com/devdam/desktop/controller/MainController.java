@@ -4,6 +4,7 @@ import com.devdam.desktop.model.DependencyAnalysis;
 import com.devdam.desktop.model.PackageConfiguration;
 import com.devdam.desktop.model.PackagingResult;
 import com.devdam.desktop.service.ConfigurationService;
+import com.devdam.desktop.service.ConsoleLoggerService;
 import com.devdam.desktop.service.DependencyAnalysisService;
 import com.devdam.desktop.service.PackagingService;
 import com.devdam.desktop.service.ViewManager;
@@ -125,6 +126,9 @@ public class MainController implements Initializable {
     @Autowired
     private ViewManager viewManager;
 
+    @Autowired
+    private ConsoleLoggerService consoleLogger;
+
     // Application properties
     @Value("${application.description}")
     private String applicationDescription;
@@ -143,6 +147,10 @@ public class MainController implements Initializable {
         loadDefaultConfiguration();
         refreshPresets();
         updateToolAvailability();
+        
+        // Initialize console logger
+        consoleLogger.setConsoleArea(consoleArea);
+        consoleLogger.info("SYSTEM", "Packaroo application initialized successfully");
         
         // Initialize menu visibility
         updateMenuVisibility();
@@ -191,7 +199,10 @@ public class MainController implements Initializable {
         resetButton.setOnAction(e -> resetForm());
 
         // Console
-        clearConsoleButton.setOnAction(e -> consoleArea.clear());
+        clearConsoleButton.setOnAction(e -> {
+            consoleLogger.clear();
+            consoleLogger.info("SYSTEM", "Console cleared");
+        });
         exportLogsButton.setOnAction(e -> exportLogs());
 
         // Modules
@@ -462,6 +473,10 @@ public class MainController implements Initializable {
             @Override
             protected DependencyAnalysis call() throws Exception {
                 updateMessage("Analyzing JAR dependencies...");
+                Platform.runLater(() -> {
+                    consoleLogger.section("JAR DEPENDENCY ANALYSIS");
+                    consoleLogger.info("ANALYSIS", "Starting analysis of: " + jarFile.getFileName());
+                });
                 return dependencyService.analyzeJar(jarFile);
             }
 
@@ -479,7 +494,7 @@ public class MainController implements Initializable {
             protected void failed() {
                 Platform.runLater(() -> {
                     statusLabel.textProperty().unbind();
-                    logToConsole("Analysis failed: " + getException().getMessage());
+                    consoleLogger.error("ANALYSIS", "Analysis failed: " + getException().getMessage());
                     statusLabel.setText("Analysis failed");
                 });
             }
@@ -491,15 +506,15 @@ public class MainController implements Initializable {
 
     private void handleAnalysisResult(DependencyAnalysis analysis) {
         if (analysis.isSuccess()) {
-            logToConsole("Analysis completed successfully!");
-            logToConsole("JAR: " + analysis.getJarPath());
+            consoleLogger.success("ANALYSIS", "Analysis completed successfully!");
+            consoleLogger.info("ANALYSIS", "JAR: " + analysis.getJarPath());
 
             // Auto-populate application fields from JAR filename (similar to file selection)
             if (analysis.getJarPath() != null) {
                 try {
                     File jarFile = new File(analysis.getJarPath());
                     populateFieldsFromJarFile(jarFile);
-                    logToConsole("Auto-populated app config fields from JAR filename");
+                    consoleLogger.info("CONFIG", "Auto-populated app config fields from JAR filename");
                 } catch (Exception e) {
                     log.warn("Could not auto-populate fields from JAR filename during analysis", e);
                 }
@@ -507,26 +522,26 @@ public class MainController implements Initializable {
 
             if (analysis.getMainClass() != null) {
                 mainClassField.setText(analysis.getMainClass());
-                logToConsole("Detected main class: " + analysis.getMainClass());
+                consoleLogger.info("CONFIG", "Detected main class: " + analysis.getMainClass());
             }
             
             // If there's a Start-Class, use it for vendor extraction and display
             if (analysis.getStartClass() != null) {
                 mainClassField.setText(analysis.getStartClass());
-                logToConsole("Detected start class (using for main class): " + analysis.getStartClass());
+                consoleLogger.info("CONFIG", "Detected start class (using for main class): " + analysis.getStartClass());
                 
                 // Extract vendor from start class package
                 String vendorFromPackage = extractVendorFromMainClass(analysis.getStartClass());
                 if (vendorFromPackage != null && !vendorFromPackage.trim().isEmpty()) {
                     vendorField.setText(vendorFromPackage);
-                    logToConsole("Set vendor from start class package: " + vendorFromPackage);
+                    consoleLogger.info("CONFIG", "Set vendor from start class package: " + vendorFromPackage);
                 }
             } else if (analysis.getMainClass() != null) {
                 // Fallback to main class for vendor extraction if no start class
                 String vendorFromPackage = extractVendorFromMainClass(analysis.getMainClass());
                 if (vendorFromPackage != null && !vendorFromPackage.trim().isEmpty()) {
                     vendorField.setText(vendorFromPackage);
-                    logToConsole("Set vendor from main class package: " + vendorFromPackage);
+                    consoleLogger.info("CONFIG", "Set vendor from main class package: " + vendorFromPackage);
                 }
             }
 
@@ -536,9 +551,9 @@ public class MainController implements Initializable {
             }
 
             if (analysis.hasRequiredModules()) {
-                logToConsole("Required modules: " + analysis.getRequiredModules().size());
+                consoleLogger.info("ANALYSIS", "Required modules: " + analysis.getRequiredModules().size());
                 for (String module : analysis.getRequiredModules()) {
-                    logToConsole("  - " + module);
+                    consoleLogger.info("MODULES", "  - " + module);
                 }
 
                 // Update modules list and select required ones
@@ -546,19 +561,19 @@ public class MainController implements Initializable {
             }
 
             if (analysis.hasMissingModules()) {
-                logToConsole("WARNING: Missing modules detected:");
+                consoleLogger.warning("MODULES", "Missing modules detected:");
                 for (String module : analysis.getMissingModules()) {
-                    logToConsole("  - " + module + " (not available in current JDK)");
+                    consoleLogger.warning("MODULES", "  - " + module + " (not available in current JDK)");
                 }
             }
         } else {
-            logToConsole("Analysis failed: " + analysis.getErrorMessage());
+            consoleLogger.error("ANALYSIS", "Analysis failed: " + analysis.getErrorMessage());
             showAlert(Alert.AlertType.ERROR, "Analysis Failed", analysis.getErrorMessage());
         }
     }
     
     private void populateAppConfigFromManifest(DependencyAnalysis analysis) {
-        logToConsole("Populating app config from manifest information...");
+        consoleLogger.info("CONFIG", "Populating app config from manifest information...");
         
         // Prioritize Implementation-* attributes, fallback to Specification-* or Bundle-*
         String appName = getFirstNonNull(analysis.getImplementationTitle(), 
@@ -585,7 +600,7 @@ public class MainController implements Initializable {
                 (!manifestAppName.equals(currentAppName) && !manifestAppName.toLowerCase().contains("memzo-extracter"))) {
                 String formattedAppName = formatApplicationName(manifestAppName);
                 appNameField.setText(formattedAppName);
-                logToConsole("Set app name from manifest: " + formattedAppName);
+                consoleLogger.info("CONFIG", "Set app name from manifest: " + formattedAppName);
                 
                 // Set output directory based on app name from manifest
                 setOutputDirectoryFromAppName(formattedAppName);
@@ -593,18 +608,18 @@ public class MainController implements Initializable {
                 // Update preset name field with app name + "Config"
                 updatePresetNameField(formattedAppName);
             } else {
-                logToConsole("Keeping filename-based app name: " + currentAppName);
+                consoleLogger.info("CONFIG", "Keeping filename-based app name: " + currentAppName);
             }
         }
         
         if (version != null && !version.trim().isEmpty()) {
             versionField.setText(version.trim());
-            logToConsole("Set app version from manifest: " + version.trim());
+            consoleLogger.info("CONFIG", "Set app version from manifest: " + version.trim());
         }
         
         if (vendor != null && !vendor.trim().isEmpty()) {
             vendorField.setText(vendor.trim());
-            logToConsole("Set vendor from manifest: " + vendor.trim());
+            consoleLogger.info("CONFIG", "Set vendor from manifest: " + vendor.trim());
         } else {
             // Try to extract vendor from start class first, then main class if available
             String classForVendor = analysis.getStartClass() != null ? analysis.getStartClass() : analysis.getMainClass();
@@ -613,7 +628,7 @@ public class MainController implements Initializable {
                 if (vendorFromPackage != null && !vendorFromPackage.trim().isEmpty()) {
                     vendorField.setText(vendorFromPackage);
                     String classType = analysis.getStartClass() != null ? "start class" : "main class";
-                    logToConsole("Set vendor from " + classType + " package: " + vendorFromPackage);
+                    consoleLogger.info("CONFIG", "Set vendor from " + classType + " package: " + vendorFromPackage);
                 }
             }
         }
@@ -625,7 +640,7 @@ public class MainController implements Initializable {
         // }
         
         if (appName == null && version == null && vendor == null && description == null) {
-            logToConsole("No useful manifest information found for app config");
+            consoleLogger.warning("CONFIG", "No useful manifest information found for app config");
         }
     }
     
@@ -744,7 +759,7 @@ public class MainController implements Initializable {
                 updateProgress(0, 1);
 
                 return packagingService.packageApplication(config, logMessage -> {
-                    Platform.runLater(() -> logToConsole(logMessage));
+                    Platform.runLater(() -> consoleLogger.info("BUILD", logMessage));
                 });
             }
 
@@ -764,7 +779,7 @@ public class MainController implements Initializable {
             protected void failed() {
                 Platform.runLater(() -> {
                     statusLabel.textProperty().unbind();
-                    logToConsole("Packaging failed: " + getException().getMessage());
+                    consoleLogger.error("BUILD", "Packaging failed: " + getException().getMessage());
                     stopAnimatedProgressBar();
                     progressBar.setVisible(false);
                     statusLabel.setText("Packaging failed");
@@ -793,19 +808,19 @@ public class MainController implements Initializable {
 
     private void handlePackagingResult(PackagingResult result) {
         if (result.isSuccess()) {
-            logToConsole("\n" + "=".repeat(50));
-            logToConsole("PACKAGING COMPLETED SUCCESSFULLY!");
-            logToConsole("Output location: " + result.getOutputPath());
-            logToConsole("Execution time: " + result.getExecutionTimeMs() + " ms");
-            logToConsole("=".repeat(50));
+            consoleLogger.separator();
+            consoleLogger.success("BUILD", "PACKAGING COMPLETED SUCCESSFULLY!");
+            consoleLogger.info("BUILD", "Output location: " + result.getOutputPath());
+            consoleLogger.info("BUILD", "Execution time: " + result.getExecutionTimeMs() + " ms");
+            consoleLogger.separator();
 
             showAlert(Alert.AlertType.INFORMATION, "Success",
                     "Application packaged successfully!\n\nOutput location: " + result.getOutputPath());
         } else {
-            logToConsole("\n" + "=".repeat(50));
-            logToConsole("PACKAGING FAILED!");
-            logToConsole("Error: " + result.getMessage());
-            logToConsole("=".repeat(50));
+            consoleLogger.separator();
+            consoleLogger.error("BUILD", "PACKAGING FAILED!");
+            consoleLogger.error("BUILD", "Error: " + result.getMessage());
+            consoleLogger.separator();
 
             showAlert(Alert.AlertType.ERROR, "Packaging Failed", result.getMessage());
         }
@@ -813,7 +828,7 @@ public class MainController implements Initializable {
         // Log all messages
         if (result.getLogs() != null) {
             for (String log : result.getLogs()) {
-                logToConsole(log);
+                consoleLogger.info("BUILD", log);
             }
         }
     }
@@ -984,12 +999,12 @@ public class MainController implements Initializable {
 
                 Platform.runLater(() -> {
                     if (!jpackageAvailable) {
-                        logToConsole("WARNING: jpackage tool is not available. Please ensure JDK 14+ is installed.");
+                        consoleLogger.warning("SYSTEM", "jpackage tool is not available. Please ensure JDK 14+ is installed.");
                         packageButton.setDisable(true);
                     }
 
                     if (!jlinkAvailable) {
-                        logToConsole("WARNING: jlink tool is not available. JLink features will be disabled.");
+                        consoleLogger.warning("SYSTEM", "jlink tool is not available. JLink features will be disabled.");
                         enableJLinkCheck.setDisable(true);
                         enableJLinkCheck.setSelected(false);
                     }
@@ -1000,13 +1015,6 @@ public class MainController implements Initializable {
         };
 
         new Thread(checkTask).start();
-    }
-
-    private void logToConsole(String message) {
-        Platform.runLater(() -> {
-            consoleArea.appendText("[" + java.time.LocalTime.now().toString() + "] " + message + "\n");
-            consoleArea.setScrollTop(Double.MAX_VALUE);
-        });
     }
 
     private void showAlert(Alert.AlertType type, String title, String message) {
@@ -1049,7 +1057,7 @@ public class MainController implements Initializable {
         confirmation.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
                 resetForm();
-                logToConsole("New configuration created");
+                consoleLogger.info("CONFIG", "New configuration created");
             }
         });
     }
@@ -1067,10 +1075,10 @@ public class MainController implements Initializable {
                 PackageConfiguration config = configurationService.loadConfigurationFromFile(file.getAbsolutePath());
                 currentConfig = config;
                 updateUIFromConfiguration(config);
-                logToConsole("Configuration loaded from: " + file.getName());
+                consoleLogger.success("CONFIG", "Configuration loaded from: " + file.getName());
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Configuration loaded successfully!");
             } catch (Exception ex) {
-                logToConsole("Error loading configuration: " + ex.getMessage());
+                consoleLogger.error("CONFIG", "Error loading configuration: " + ex.getMessage());
                 showAlert(Alert.AlertType.ERROR, "Error", "Failed to load configuration: " + ex.getMessage());
             }
         }
@@ -1096,10 +1104,10 @@ public class MainController implements Initializable {
             try {
                 PackageConfiguration config = getConfigurationFromUI();
                 configurationService.saveConfigurationToFile(config, file.getAbsolutePath());
-                logToConsole("Configuration saved to: " + file.getName());
+                consoleLogger.success("CONFIG", "Configuration saved to: " + file.getName());
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Configuration saved successfully!");
             } catch (Exception ex) {
-                logToConsole("Error saving configuration: " + ex.getMessage());
+                consoleLogger.error("CONFIG", "Error saving configuration: " + ex.getMessage());
                 showAlert(Alert.AlertType.ERROR, "Error", "Failed to save configuration: " + ex.getMessage());
             }
         }
