@@ -34,27 +34,32 @@
 
 /* ===== SPLASH SCREEN ===== */
 .splash-container {
-    -fx-background-color: linear-gradient(135deg, #6DC7FF 0%, #E6ABFF 35%, #1A6DFF 70%, #C822FF 100%);
+    -fx-background-color: rgba(255, 255, 255, 0.95);
+    -fx-border-color: #1A6DFF;
+    -fx-border-width: 2px;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
     -fx-effect: dropshadow(gaussian, rgba(26, 109, 255, 0.3), 15, 0, 0, 8);
 }
 
 .splash-title {
-    -fx-text-fill: white;
+    -fx-text-fill: #1A6DFF;
     -fx-font-size: 32px;
     -fx-font-weight: bold;
-    -fx-effect: dropshadow(gaussian, rgba(200, 34, 255, 0.6), 3, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.8), 4, 0, 0, 2);
 }
 
 .splash-version {
-    -fx-text-fill: rgba(255, 255, 255, 0.9);
+    -fx-text-fill: #6DC7FF;
     -fx-font-size: 16px;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 2, 0, 0, 1);
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.6), 3, 0, 0, 1);
 }
 
 .splash-status {
-    -fx-text-fill: rgba(255, 255, 255, 0.95);
+    -fx-text-fill: #333333;
     -fx-font-size: 14px;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 2, 0, 0, 1);
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.8), 2, 0, 0, 1);
 }
 
 /* ===== HEADERS ===== */
@@ -188,21 +193,23 @@
 /* ===== PROGRESS BAR ===== */
 .progress-bar {
     -fx-background-color: rgba(109, 199, 255, 0.2);
-    -fx-background-radius: 12px;
-    -fx-padding: 3px;
+    -fx-background-radius: 8px;
+    -fx-padding: 2px;
+    -fx-pref-height: 12px;
+    -fx-max-height: 12px;
     -fx-effect: innershadow(gaussian, rgba(26, 109, 255, 0.3), 2, 0, 0, 0);
 }
 
 .progress-bar > .bar {
     -fx-background-color: linear-gradient(to right, #6DC7FF 0%, #E6ABFF 50%, #C822FF 100%);
-    -fx-background-radius: 10px;
+    -fx-background-radius: 6px;
     -fx-background-insets: 0;
     -fx-effect: dropshadow(gaussian, rgba(200, 34, 255, 0.4), 3, 0, 0, 1);
 }
 
 .progress-bar > .track {
     -fx-background-color: rgba(26, 109, 255, 0.1);
-    -fx-background-radius: 10px;
+    -fx-background-radius: 6px;
 }
 
 /* ===== CHECKBOXES ===== */

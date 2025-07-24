@@ -1,5 +1,6 @@
 package com.devdam.desktop;
 
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -40,20 +41,26 @@ public class DesktopApplication extends Application {
         log.info("Starting Packaroo application...");
         
         // Show splash screen first
-        showSplashScreen();
+        Stage splashStage = showSplashScreen();
         
-        // Load main application after splash
-        Platform.runLater(() -> {
-            try {
-                showMainApplication(primaryStage);
-            } catch (Exception e) {
-                log.error("Error loading main application", e);
-                Platform.exit();
+        // Load main application after splash with proper timing
+        Timeline timeline = new Timeline();
+        timeline.getKeyFrames().add(new javafx.animation.KeyFrame(
+            javafx.util.Duration.seconds(4.0), // Give splash 4 seconds to display
+            e -> {
+                try {
+                    splashStage.close();
+                    showMainApplication(primaryStage);
+                } catch (Exception ex) {
+                    log.error("Error loading main application", ex);
+                    Platform.exit();
+                }
             }
-        });
+        ));
+        timeline.play();
     }
 
-    private void showSplashScreen() {
+    private Stage showSplashScreen() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/splash.fxml"));
             loader.setControllerFactory(context::getBean);
@@ -61,7 +68,11 @@ public class DesktopApplication extends Application {
             
             Stage splashStage = new Stage();
             splashStage.setTitle("Packaroo");
-            splashStage.setScene(new Scene(splashRoot));
+            
+            // Create scene with proper styling
+            Scene splashScene = new Scene(splashRoot, 600, 400);
+            splashScene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
+            splashStage.setScene(splashScene);
             
             // Try to load icon, but don't fail if it's missing
             try {
@@ -77,18 +88,12 @@ public class DesktopApplication extends Application {
             splashStage.centerOnScreen();
             splashStage.show();
             
-            // Auto close splash after 3 seconds
-            Platform.runLater(() -> {
-                try {
-                    Thread.sleep(3000);
-                    splashStage.close();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            });
+            log.info("Splash screen displayed successfully");
+            return splashStage;
             
         } catch (Exception e) {
-            log.warn("Could not load splash screen, proceeding to main application", e);
+            log.error("Could not load splash screen", e);
+            throw new RuntimeException("Failed to show splash screen", e);
         }
     }
 
