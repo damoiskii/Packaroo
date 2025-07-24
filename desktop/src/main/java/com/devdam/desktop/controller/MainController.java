@@ -597,7 +597,7 @@ public class MainController implements Initializable {
             
             // Only update if manifest has a different/better app name than what we extracted from filename
             if (currentAppName == null || currentAppName.trim().isEmpty() || 
-                (!manifestAppName.equals(currentAppName) && !manifestAppName.toLowerCase().contains("memzo-extracter"))) {
+                (!manifestAppName.equals(currentAppName) && (!manifestAppName.toLowerCase().contains("memzo-extracter") || !manifestAppName.toLowerCase().contains("-")))) {
                 String formattedAppName = formatApplicationName(manifestAppName);
                 appNameField.setText(formattedAppName);
                 consoleLogger.info("CONFIG", "Set app name from manifest: " + formattedAppName);
@@ -705,7 +705,7 @@ public class MainController implements Initializable {
 
     private void updatePresetNameField(String appName) {
         if (appName != null && !appName.trim().isEmpty()) {
-            String presetName = appName.trim() + " Config";
+            String presetName = appName.trim() + " Preset";
             presetNameField.setText(presetName);
         }
     }
@@ -1096,7 +1096,7 @@ public class MainController implements Initializable {
         if (appName != null && !appName.trim().isEmpty()) {
             fileChooser.setInitialFileName(appName.trim() + " Config.json");
         } else {
-            fileChooser.setInitialFileName("packaroo Config.json");
+            fileChooser.setInitialFileName("Packaroo Config.json");
         }
         
         java.io.File file = fileChooser.showSaveDialog(appNameField.getScene().getWindow());
