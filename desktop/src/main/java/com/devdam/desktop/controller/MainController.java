@@ -7,6 +7,8 @@ import com.devdam.desktop.service.ConfigurationService;
 import com.devdam.desktop.service.DependencyAnalysisService;
 import com.devdam.desktop.service.PackagingService;
 import javafx.application.Platform;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -15,6 +17,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import javafx.util.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.controlsfx.control.CheckListView;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +71,12 @@ public class MainController implements Initializable {
     @FXML private Button resetButton;
     @FXML private ProgressBar progressBar;
     @FXML private Label statusLabel;
+
+    // Animation
+    private Timeline progressAnimation;
+    private double currentProgress = 0.0;
+    private boolean isIncrementing = true;
+    private static final double PROGRESS_STEP = 0.05; // 5% increments
 
     // Console
     @FXML private TextArea consoleArea;
@@ -722,6 +731,7 @@ public class MainController implements Initializable {
                 Platform.runLater(() -> {
                     statusLabel.textProperty().unbind();
                     handlePackagingResult(result);
+                    stopAnimatedProgressBar();
                     progressBar.setVisible(false);
                     statusLabel.setText(result.isSuccess() ? "Packaging completed" : "Packaging failed");
                 });
@@ -732,20 +742,28 @@ public class MainController implements Initializable {
                 Platform.runLater(() -> {
                     statusLabel.textProperty().unbind();
                     logToConsole("Packaging failed: " + getException().getMessage());
+                    stopAnimatedProgressBar();
                     progressBar.setVisible(false);
                     statusLabel.setText("Packaging failed");
                 });
             }
         };
 
+        // Start animated progress bar instead of binding to task progress
         progressBar.setVisible(true);
-        progressBar.progressProperty().bind(packageTask.progressProperty());
+        startAnimatedProgressBar();
         statusLabel.textProperty().bind(packageTask.messageProperty());
 
         // Disable package button during processing
         packageButton.setDisable(true);
-        packageTask.setOnSucceeded(e -> packageButton.setDisable(false));
-        packageTask.setOnFailed(e -> packageButton.setDisable(false));
+        packageTask.setOnSucceeded(e -> {
+            packageButton.setDisable(false);
+            stopAnimatedProgressBar();
+        });
+        packageTask.setOnFailed(e -> {
+            packageButton.setDisable(false);
+            stopAnimatedProgressBar();
+        });
 
         new Thread(packageTask).start();
     }
@@ -1064,5 +1082,66 @@ public class MainController implements Initializable {
         about.setResizable(true);
         about.getDialogPane().setPrefWidth(400);
         about.showAndWait();
+    }
+
+    // Animated Progress Bar Methods
+    private void startAnimatedProgressBar() {
+        // Stop any existing animation
+        stopAnimatedProgressBar();
+        
+        // Add animated loading style class
+        progressBar.getStyleClass().add("animated-loading");
+        
+        // Reset progress values
+        currentProgress = 0.0;
+        isIncrementing = true;
+        progressBar.setProgress(currentProgress);
+        
+        // Create incremental progress animation
+        progressAnimation = new Timeline();
+        progressAnimation.setCycleCount(Timeline.INDEFINITE);
+        
+        // Update progress every 100ms for smooth animation
+        KeyFrame progressFrame = new KeyFrame(Duration.millis(100), e -> updateIncrementalProgress());
+        progressAnimation.getKeyFrames().add(progressFrame);
+        progressAnimation.play();
+    }
+    
+    private void stopAnimatedProgressBar() {
+        // Stop animation
+        if (progressAnimation != null) {
+            progressAnimation.stop();
+            progressAnimation = null;
+        }
+        
+        // Remove animated loading style class
+        progressBar.getStyleClass().removeAll("animated-loading");
+        
+        // Reset to determinate mode
+        progressBar.setProgress(0.0);
+        currentProgress = 0.0;
+        isIncrementing = true;
+    }
+    
+    private void updateIncrementalProgress() {
+        Platform.runLater(() -> {
+            if (isIncrementing) {
+                // Increment from 0 to 100%
+                currentProgress += PROGRESS_STEP;
+                if (currentProgress >= 1.0) {
+                    currentProgress = 1.0;
+                    isIncrementing = false; // Start decrementing
+                }
+            } else {
+                // Decrement from 100% to 0
+                currentProgress -= PROGRESS_STEP;
+                if (currentProgress <= 0.0) {
+                    currentProgress = 0.0;
+                    isIncrementing = true; // Start incrementing again
+                }
+            }
+            
+            progressBar.setProgress(currentProgress);
+        });
     }
 }
