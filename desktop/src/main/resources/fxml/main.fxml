@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.CheckListView?>
+
+<VBox fx:id="rootPane" prefHeight="800.0" prefWidth="1200.0" styleClass="main-container" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.devdam.desktop.controller.MainController">
+   <children>
+      <!-- Menu Bar -->
+      <MenuBar>
+         <menus>
+            <Menu mnemonicParsing="false" text="File">
+               <items>
+                  <MenuItem fx:id="newConfigMenuItem" mnemonicParsing="false" text="New Configuration" />
+                  <MenuItem fx:id="openConfigMenuItem" mnemonicParsing="false" text="Open Configuration" />
+                  <MenuItem fx:id="saveConfigMenuItem" mnemonicParsing="false" text="Save Configuration" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="exitMenuItem" mnemonicParsing="false" text="Exit" />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Tools">
+               <items>
+                  <MenuItem fx:id="analyzeJarMenuItem" mnemonicParsing="false" text="Analyze JAR" />
+                  <MenuItem fx:id="packageAppMenuItem" mnemonicParsing="false" text="Package Application" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="clearConsoleMenuItem" mnemonicParsing="false" text="Clear Console" />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="View">
+               <items>
+                  <CheckMenuItem fx:id="darkThemeCheck" mnemonicParsing="false" text="Dark Theme" />
+                  <MenuItem fx:id="backToMainMenuItem" mnemonicParsing="false" text="Back to Main" visible="false" />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Help">
+               <items>
+                  <MenuItem fx:id="aboutMenuItem" mnemonicParsing="false" text="About" />
+                  <MenuItem fx:id="setupMenuItem" mnemonicParsing="false" text="Setup Guide" />           
+               </items>
+            </Menu>
+         </menus>
+      </MenuBar>
+
+      <!-- Main Content -->
+      <SplitPane dividerPositions="0.7" orientation="VERTICAL" VBox.vgrow="ALWAYS">
+         <items>
+            <!-- Configuration Area -->
+            <ScrollPane fitToWidth="true">
+               <content>
+                  <VBox spacing="20.0">
+                     <padding>
+                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                     </padding>
+                     <children>
+                        <!-- Header -->
+                        <HBox alignment="CENTER_LEFT" spacing="20.0">
+                           <children>
+                              <Label styleClass="header-title" text="Packaroo - Java Application Packager" />
+                              <Region HBox.hgrow="ALWAYS" />
+                              <VBox alignment="CENTER_RIGHT" spacing="5.0">
+                                 <children>
+                                    <HBox alignment="CENTER_RIGHT" spacing="10.0">
+                                       <children>
+                                          <ProgressBar fx:id="progressBar" prefWidth="200.0" visible="false" />
+                                          <Label fx:id="statusLabel" styleClass="status-label" text="Ready" />
+                                       </children>
+                                    </HBox>
+                                 </children>
+                              </VBox>
+                           </children>
+                        </HBox>
+
+                        <!-- Presets Section -->
+                        <TitledPane expanded="false" text="Presets">
+                           <content>
+                              <VBox spacing="10.0">
+                                 <children>
+                                    <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                       <children>
+                                          <Label text="Load Preset:" />
+                                          <ComboBox fx:id="presetsCombo" prefWidth="200.0" />
+                                          <Button fx:id="loadPresetButton" text="Load" />
+                                          <Button fx:id="deletePresetButton" text="Delete" />
+                                       </children>
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                       <children>
+                                          <Label text="Save As:" />
+                                          <TextField fx:id="presetNameField" prefWidth="200.0" promptText="Enter preset name" />
+                                          <Button fx:id="savePresetButton" text="Save Preset" />
+                                       </children>
+                                    </HBox>
+                                 </children>
+                                 <padding>
+                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                 </padding>
+                              </VBox>
+                           </content>
+                        </TitledPane>
+
+                        <!-- File Selection -->
+                        <TitledPane expanded="true" text="File Selection">
+                           <content>
+                              <GridPane hgap="10.0" vgap="15.0">
+                                 <columnConstraints>
+                                    <ColumnConstraints hgrow="NEVER" minWidth="120.0" />
+                                    <ColumnConstraints hgrow="ALWAYS" />
+                                    <ColumnConstraints hgrow="NEVER" />
+                                 </columnConstraints>
+                                 <children>
+                                    <Label text="JAR File:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                    <TextField fx:id="jarFileField" promptText="Select JAR file to package" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                    <Button fx:id="browseJarButton" text="Browse..." GridPane.columnIndex="2" GridPane.rowIndex="0" />
+
+                                    <Label text="Icon File:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                    <TextField fx:id="iconFileField" promptText="Select application icon (optional)" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    <Button fx:id="browseIconButton" text="Browse..." GridPane.columnIndex="2" GridPane.rowIndex="1" />
+
+                                    <Label text="Output Directory:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                    <TextField fx:id="outputDirField" promptText="Select output directory" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                    <Button fx:id="browseOutputButton" text="Browse..." GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                                 </children>
+                                 <padding>
+                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                 </padding>
+                              </GridPane>
+                           </content>
+                        </TitledPane>
+
+                        <!-- Application Configuration -->
+                        <TitledPane expanded="true" text="Application Configuration">
+                           <content>
+                              <GridPane hgap="10.0" vgap="15.0">
+                                 <columnConstraints>
+                                    <ColumnConstraints hgrow="NEVER" minWidth="120.0" />
+                                    <ColumnConstraints hgrow="ALWAYS" />
+                                    <ColumnConstraints hgrow="NEVER" minWidth="120.0" />
+                                    <ColumnConstraints hgrow="ALWAYS" />
+                                 </columnConstraints>
+                                 <children>
+                                    <Label text="App Name:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                    <TextField fx:id="appNameField" promptText="Application name" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                                    <Label text="Version:" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+                                    <TextField fx:id="versionField" promptText="1.0.0" GridPane.columnIndex="3" GridPane.rowIndex="0" />
+
+                                    <Label text="Main Class:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                    <TextField fx:id="mainClassField" promptText="com.example.Main" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="1" />
+
+                                    <Label text="Vendor:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                    <TextField fx:id="vendorField" promptText="Company name" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+                                    <Label text="Copyright:" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                                    <TextField fx:id="copyrightField" promptText="Copyright notice" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+
+                                    <Label text="Description:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                                    <TextArea fx:id="descriptionArea" prefRowCount="2" promptText="Application description" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="3" />
+                                 </children>
+                                 <padding>
+                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                 </padding>
+                              </GridPane>
+                           </content>
+                        </TitledPane>
+
+                        <!-- Platform and Format -->
+                        <TitledPane expanded="true" text="Platform &amp; Format">
+                           <content>
+                              <HBox spacing="20.0">
+                                 <children>
+                                    <VBox spacing="10.0">
+                                       <children>
+                                          <Label text="Target Platform:" />
+                                          <ComboBox fx:id="targetPlatformCombo" prefWidth="200.0" />
+                                       </children>
+                                    </VBox>
+                                    <VBox spacing="10.0">
+                                       <children>
+                                          <Label text="Output Format:" />
+                                          <ComboBox fx:id="outputFormatCombo" prefWidth="200.0" />
+                                       </children>
+                                    </VBox>
+                                 </children>
+                                 <padding>
+                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                 </padding>
+                              </HBox>
+                           </content>
+                        </TitledPane>
+
+                        <!-- JLink Configuration -->
+                        <TitledPane expanded="false" text="JLink Configuration">
+                           <content>
+                              <VBox spacing="15.0">
+                                 <children>
+                                    <CheckBox fx:id="enableJLinkCheck" text="Enable JLink (Create minimal runtime)" />
+                                    <Label text="Required Modules:" />
+                                    <HBox spacing="10.0">
+                                       <children>
+                                          <CheckListView fx:id="modulesListView" prefHeight="200.0" prefWidth="400.0" />
+                                          <VBox spacing="10.0">
+                                             <children>
+                                                <Label text="Add Custom Module:" />
+                                                <TextField fx:id="customModuleField" promptText="module.name" />
+                                                <Button fx:id="addModuleButton" text="Add Module" />
+                                             </children>
+                                          </VBox>
+                                       </children>
+                                    </HBox>
+                                 </children>
+                                 <padding>
+                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                 </padding>
+                              </VBox>
+                           </content>
+                        </TitledPane>
+
+                        <!-- Advanced Options -->
+                        <TitledPane expanded="false" text="Advanced Options">
+                           <content>
+                              <HBox spacing="20.0">
+                                 <children>
+                                    <VBox spacing="10.0" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <Label text="JVM Arguments (one per line):" />
+                                          <TextArea fx:id="jvmArgsArea" prefRowCount="4" promptText="-Xmx512m&#10;-Dfile.encoding=UTF-8" />
+                                       </children>
+                                    </VBox>
+                                    <VBox spacing="10.0" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <Label text="Application Arguments (one per line):" />
+                                          <TextArea fx:id="appArgsArea" prefRowCount="4" promptText="--config=app.properties&#10;--debug" />
+                                       </children>
+                                    </VBox>
+                                 </children>
+                                 <padding>
+                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                 </padding>
+                              </HBox>
+                           </content>
+                        </TitledPane>
+
+                        <!-- Action Buttons -->
+                        <HBox alignment="CENTER" spacing="20.0">
+                           <children>
+                              <Button fx:id="analyzeButton" prefWidth="120.0" styleClass="action-button" text="Analyze JAR" />
+                              <Button fx:id="packageButton" prefWidth="120.0" styleClass="primary-button" text="Package App" />
+                              <Button fx:id="resetButton" prefWidth="120.0" styleClass="action-button" text="Reset" />
+                           </children>
+                           <padding>
+                              <Insets top="20.0" />
+                           </padding>
+                        </HBox>
+                     </children>
+                  </VBox>
+               </content>
+            </ScrollPane>
+
+            <!-- Console Area -->
+            <VBox>
+               <children>
+                  <HBox alignment="CENTER_LEFT" spacing="10.0">
+                     <children>
+                        <Label styleClass="console-header" text="Console Output" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button fx:id="clearConsoleButton" text="Clear" />
+                        <Button fx:id="exportLogsButton" text="Export Logs" />
+                     </children>
+                     <padding>
+                        <Insets bottom="5.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </HBox>
+                  <TextArea fx:id="consoleArea" editable="false" prefRowCount="10" styleClass="console" VBox.vgrow="ALWAYS">
+                     <VBox.margin>
+                        <Insets bottom="10.0" left="10.0" right="10.0" />
+                     </VBox.margin>
+                  </TextArea>
+               </children>
+            </VBox>
+         </items>
+      </SplitPane>
+   </children>
+</VBox>
