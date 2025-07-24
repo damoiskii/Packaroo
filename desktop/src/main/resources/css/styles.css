@@ -5,30 +5,30 @@
     
     /* Custom Color Palette */
     -fx-base: #f8faff;
-    -fx-background: linear-gradient(to bottom right, #ffffff, #f0f4ff);
+    -fx-background: #f0f4ff;
     -fx-control-inner-background: rgba(255, 255, 255, 0.9);
     -fx-accent: #1A6DFF;
-    -fx-default-button: linear-gradient(to bottom, #6DC7FF, #1A6DFF);
+    -fx-default-button: #1A6DFF;
     -fx-focus-color: #1A6DFF;
     -fx-faint-focus-color: #1A6DFF33;
-    -fx-selection-bar: linear-gradient(to right, #6DC7FF, #1A6DFF);
+    -fx-selection-bar: #1A6DFF;
 }
 
 /* Dark Theme */
 .root.dark-theme {
     -fx-base: #1a1a2e;
-    -fx-background: linear-gradient(to bottom right, #0f0f23, #16213e);
+    -fx-background: #16213e;
     -fx-control-inner-background: rgba(26, 26, 46, 0.9);
     -fx-accent: #6DC7FF;
-    -fx-default-button: linear-gradient(to bottom, #C822FF, #1A6DFF);
+    -fx-default-button: #C822FF;
     -fx-focus-color: #6DC7FF;
     -fx-faint-focus-color: #6DC7FF44;
-    -fx-selection-bar: linear-gradient(to right, #E6ABFF, #C822FF);
+    -fx-selection-bar: #C822FF;
 }
 
 /* ===== MAIN CONTAINER ===== */
 .main-container {
-    -fx-background-color: linear-gradient(to bottom right, rgba(109, 199, 255, 0.05), rgba(230, 171, 255, 0.05));
+    -fx-background-color: rgba(230, 171, 255, 0.05);
     -fx-effect: innershadow(gaussian, rgba(26, 109, 255, 0.1), 8, 0, 0, 0);
 }
 
@@ -66,7 +66,7 @@
 .header-title {
     -fx-font-size: 24px;
     -fx-font-weight: bold;
-    -fx-text-fill: linear-gradient(to right, #1A6DFF, #C822FF);
+    -fx-text-fill: #1A6DFF;
     -fx-effect: dropshadow(gaussian, rgba(26, 109, 255, 0.3), 2, 0, 0, 1);
 }
 
@@ -98,25 +98,25 @@
 }
 
 .primary-button {
-    -fx-background-color: linear-gradient(to bottom, #6DC7FF, #1A6DFF);
+    -fx-background-color: #1A6DFF;
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-effect: dropshadow(gaussian, rgba(26, 109, 255, 0.4), 6, 0, 0, 3);
 }
 
 .primary-button:hover {
-    -fx-background-color: linear-gradient(to bottom, #E6ABFF, #C822FF);
+    -fx-background-color: #C822FF;
 }
 
 .action-button {
-    -fx-background-color: linear-gradient(to bottom, rgba(109, 199, 255, 0.1), rgba(26, 109, 255, 0.05));
+    -fx-background-color: rgba(109, 199, 255, 0.1);
     -fx-border-color: #6DC7FF;
     -fx-border-width: 1px;
     -fx-text-fill: #1A6DFF;
 }
 
 .action-button:hover {
-    -fx-background-color: linear-gradient(to bottom, rgba(230, 171, 255, 0.2), rgba(200, 34, 255, 0.1));
+    -fx-background-color: rgba(230, 171, 255, 0.2);
     -fx-border-color: #C822FF;
 }
 
@@ -151,7 +151,7 @@
 
 .combo-box .list-cell:filled:hover,
 .combo-box .list-cell:filled:selected {
-    -fx-background-color: linear-gradient(to right, #6DC7FF, #1A6DFF);
+    -fx-background-color: #1A6DFF;
     -fx-text-fill: white;
 }
 
@@ -235,7 +235,7 @@
 }
 
 .check-box:selected .box {
-    -fx-background-color: linear-gradient(to bottom right, #6DC7FF, #1A6DFF);
+    -fx-background-color: #1A6DFF;
     -fx-border-color: #1A6DFF;
 }
 
