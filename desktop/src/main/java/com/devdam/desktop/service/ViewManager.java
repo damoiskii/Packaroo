@@ -1,49 +1,29 @@
 package com.devdam.desktop.service;
 
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
+import com.devdam.desktop.ui.SetupGuideDialog;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
+import javax.swing.*;
 
 @Service
 public class ViewManager {
     
     private final ApplicationContext applicationContext;
-    private Stage primaryStage;
+    private JFrame mainFrame;
     
     public ViewManager(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
     
-    public void setPrimaryStage(Stage primaryStage) {
-        this.primaryStage = primaryStage;
-    }
-    
-    public void showView(String fxmlPath, String title) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
-            loader.setControllerFactory(applicationContext::getBean);
-            
-            Scene scene = new Scene(loader.load());
-            scene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
-            
-            primaryStage.setScene(scene);
-            primaryStage.setTitle(title);
-            primaryStage.show();
-            
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load view: " + fxmlPath, e);
-        }
-    }
-    
-    public void showMainView() {
-        showView("/fxml/main.fxml", "Packaroo - Desktop Package Manager");
+    public void setMainFrame(JFrame mainFrame) {
+        this.mainFrame = mainFrame;
     }
     
     public void showSetupGuide() {
-        showView("/fxml/setup-guide.fxml", "Packaroo - Setup Guide");
+        if (mainFrame != null) {
+            SetupGuideDialog setupDialog = new SetupGuideDialog(mainFrame);
+            setupDialog.showDialog();
+        }
     }
 }

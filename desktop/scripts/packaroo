@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Packaroo Launcher Script
+# This script properly launches the Spring Boot JAR with the correct classpath
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+APP_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Set the JAR file path
+JAR_FILE="$APP_DIR/app/packaroo-desktop-1.0.0.jar"
+
+# Check if Java is available
+if ! command -v java &> /dev/null; then
+    echo "Error: Java is not installed or not in PATH"
+    echo "Please install Java 17 or higher"
+    exit 1
+fi
+
+# Check Java version
+JAVA_VERSION=$(java -version 2>&1 | grep -oP 'version "?\K[0-9]+' | head -1)
+if [ "$JAVA_VERSION" -lt 17 ]; then
+    echo "Error: Java 17 or higher is required"
+    echo "Current Java version: $JAVA_VERSION"
+    exit 1
+fi
+
+# Set JavaFX module path if needed (for some distributions)
+JAVAFX_MODULES="--add-modules javafx.controls,javafx.fxml,javafx.web"
+
+# Launch the application
+exec java $JAVAFX_MODULES -jar "$JAR_FILE" "$@"

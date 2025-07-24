@@ -28,8 +28,8 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
-		<javafx.version>21.0.2</javafx.version>
-		<controlsfx.version>11.2.1</controlsfx.version>
+		<flatlaf.version>3.2.5</flatlaf.version>
+		<miglayout.version>11.3</miglayout.version>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 	</properties>
@@ -39,33 +39,18 @@
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 
-		<!-- JavaFX Dependencies -->
+		<!-- Swing Look and Feel -->
 		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-controls</artifactId>
-			<version>${javafx.version}</version>
+			<groupId>com.formdev</groupId>
+			<artifactId>flatlaf</artifactId>
+			<version>${flatlaf.version}</version>
 		</dependency>
+		
+		<!-- Enhanced layout manager for Swing -->
 		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-fxml</artifactId>
-			<version>${javafx.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-base</artifactId>
-			<version>${javafx.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-web</artifactId>
-			<version>${javafx.version}</version>
-		</dependency>
-
-		<!-- ControlsFX for enhanced UI components -->
-		<dependency>
-			<groupId>org.controlsfx</groupId>
-			<artifactId>controlsfx</artifactId>
-			<version>${controlsfx.version}</version>
+			<groupId>com.miglayout</groupId>
+			<artifactId>miglayout-swing</artifactId>
+			<version>${miglayout.version}</version>
 		</dependency>
 
 		<!-- Jackson for JSON serialization -->
@@ -105,16 +90,6 @@
 				</configuration>
 			</plugin>
 			
-			<!-- JavaFX Maven Plugin -->
-			<plugin>
-				<groupId>org.openjfx</groupId>
-				<artifactId>javafx-maven-plugin</artifactId>
-				<version>0.0.8</version>
-				<configuration>
-					<mainClass>com.devdam.desktop.DesktopApplication</mainClass>
-				</configuration>
-			</plugin>
-			
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -126,7 +101,20 @@
 						</exclude>
 					</excludes>
 					<mainClass>com.devdam.desktop.DesktopApplication</mainClass>
+					<executable>true</executable>
+					<layout>JAR</layout>
 				</configuration>
+				<executions>
+					<execution>
+						<id>repackage</id>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+						<configuration>
+							<classifier>exec</classifier>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

@@ -1,10 +1,10 @@
 package com.devdam.desktop.service;
 
 import com.devdam.desktop.model.LogLevel;
-import javafx.application.Platform;
-import javafx.scene.control.TextArea;
+import com.devdam.desktop.ui.panels.ConsolePanel;
 import org.springframework.stereotype.Service;
 
+import javax.swing.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -13,12 +13,18 @@ import java.util.List;
 @Service
 public class ConsoleLoggerService {
     
-    private TextArea consoleArea;
+    private ConsolePanel consolePanel;
+    private JTextArea consoleArea;
     private final List<String> logHistory = new ArrayList<>();
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final DateTimeFormatter FULL_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
-    public void setConsoleArea(TextArea consoleArea) {
+    public void setConsolePanel(ConsolePanel consolePanel) {
+        this.consolePanel = consolePanel;
+        this.consoleArea = consolePanel != null ? consolePanel.getConsoleArea() : null;
+    }
+    
+    public void setConsoleArea(JTextArea consoleArea) {
         this.consoleArea = consoleArea;
     }
     
@@ -27,8 +33,6 @@ public class ConsoleLoggerService {
     }
     
     public void log(LogLevel level, String category, String message) {
-        if (consoleArea == null) return;
-        
         LocalDateTime now = LocalDateTime.now();
         String timestamp = now.format(TIME_FORMATTER);
         String fullTimestamp = now.format(FULL_FORMATTER);
@@ -51,9 +55,12 @@ public class ConsoleLoggerService {
         String historyEntry = "[" + fullTimestamp + "] " + level.getName() + 
                              (category != null ? " [" + category + "]" : "") + " " + message;
         
-        Platform.runLater(() -> {
-            consoleArea.appendText(logEntry + "\n");
-            consoleArea.setScrollTop(Double.MAX_VALUE);
+        // Update UI on EDT
+        SwingUtilities.invokeLater(() -> {
+            if (consoleArea != null) {
+                consoleArea.append(logEntry + "\n");
+                consoleArea.setCaretPosition(consoleArea.getDocument().getLength());
+            }
         });
         
         // Store in history for export
@@ -125,9 +132,11 @@ public class ConsoleLoggerService {
     }
     
     public void clear() {
-        if (consoleArea != null) {
-            Platform.runLater(() -> consoleArea.clear());
-        }
+        SwingUtilities.invokeLater(() -> {
+            if (consoleArea != null) {
+                consoleArea.setText("");
+            }
+        });
         synchronized (logHistory) {
             logHistory.clear();
         }
@@ -141,23 +150,23 @@ public class ConsoleLoggerService {
     
     // Separator for visual organization
     public void separator() {
-        if (consoleArea != null) {
-            Platform.runLater(() -> {
-                consoleArea.appendText("─".repeat(80) + "\n");
-                consoleArea.setScrollTop(Double.MAX_VALUE);
-            });
-        }
+        SwingUtilities.invokeLater(() -> {
+            if (consoleArea != null) {
+                consoleArea.append("─".repeat(80) + "\n");
+                consoleArea.setCaretPosition(consoleArea.getDocument().getLength());
+            }
+        });
     }
     
     public void section(String title) {
-        if (consoleArea != null) {
-            Platform.runLater(() -> {
+        SwingUtilities.invokeLater(() -> {
+            if (consoleArea != null) {
                 String separator = "─".repeat(80);
-                consoleArea.appendText("\n" + separator + "\n");
-                consoleArea.appendText("  " + title.toUpperCase() + "\n");
-                consoleArea.appendText(separator + "\n");
-                consoleArea.setScrollTop(Double.MAX_VALUE);
-            });
-        }
+                consoleArea.append("\n" + separator + "\n");
+                consoleArea.append("  " + title.toUpperCase() + "\n");
+                consoleArea.append(separator + "\n");
+                consoleArea.setCaretPosition(consoleArea.getDocument().getLength());
+            }
+        });
     }
 }

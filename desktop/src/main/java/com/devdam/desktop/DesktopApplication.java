@@ -1,145 +1,75 @@
 package com.devdam.desktop;
 
-import com.devdam.desktop.service.ViewManager;
-import javafx.animation.Timeline;
-import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.image.Image;
-import javafx.stage.Stage;
+import com.devdam.desktop.ui.MainFrame;
+import com.devdam.desktop.ui.SplashScreen;
+import com.formdev.flatlaf.FlatLightLaf;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import javax.swing.*;
+import java.awt.*;
+
 @Slf4j
 @SpringBootApplication
-public class DesktopApplication extends Application {
+public class DesktopApplication {
 
     private static ConfigurableApplicationContext context;
-    private static String[] args;
 
     public static void main(String[] args) {
-        DesktopApplication.args = args;
-        System.setProperty("java.awt.headless", "false");
-        System.setProperty("prism.lcdtext", "false");
+        log.info("Starting Packaroo Desktop Application...");
         
-        // Launch JavaFX application
-        launch(args);
-    }
-
-    @Override
-    public void init() throws Exception {
-        // Initialize Spring Boot context
-        context = SpringApplication.run(DesktopApplication.class, args);
-        context.getAutowireCapableBeanFactory().autowireBean(this);
-    }
-
-    @Override
-    public void start(Stage primaryStage) throws Exception {
-        log.info("Starting Packaroo application...");
+        // Set system properties for better Swing experience
+        System.setProperty("awt.useSystemAAFontSettings", "on");
+        System.setProperty("swing.aatext", "true");
+        System.setProperty("sun.java2d.uiScale", "1.0");
         
-        // Show splash screen first
-        Stage splashStage = showSplashScreen();
-        
-        // Load main application after splash with proper timing
-        Timeline timeline = new Timeline();
-        timeline.getKeyFrames().add(new javafx.animation.KeyFrame(
-            javafx.util.Duration.seconds(4.0), // Give splash 4 seconds to display
-            e -> {
-                try {
-                    splashStage.close();
-                    showMainApplication(primaryStage);
-                } catch (Exception ex) {
-                    log.error("Error loading main application", ex);
-                    Platform.exit();
-                }
-            }
-        ));
-        timeline.play();
-    }
-
-    private Stage showSplashScreen() {
+        // Set Look and Feel
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/splash.fxml"));
-            loader.setControllerFactory(context::getBean);
-            Parent splashRoot = loader.load();
-            
-            Stage splashStage = new Stage();
-            splashStage.setTitle("Packaroo");
-            
-            // Create scene with proper styling
-            Scene splashScene = new Scene(splashRoot, 600, 400);
-            splashScene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
-            splashStage.setScene(splashScene);
-            
-            // Try to load icon, but don't fail if it's missing
+            UIManager.setLookAndFeel(new FlatLightLaf());
+            log.info("FlatLaf Look and Feel set successfully");
+        } catch (Exception e) {
+            log.warn("Failed to set FlatLaf Look and Feel", e);
+        }
+
+        // Ensure Swing operations run on EDT
+        SwingUtilities.invokeLater(() -> {
             try {
-                var iconStream = getClass().getResourceAsStream("/images/icon-512.png");
-                if (iconStream != null) {
-                    splashStage.getIcons().add(new Image(iconStream));
-                }
+                // Initialize Spring Boot context
+                context = SpringApplication.run(DesktopApplication.class, args);
+                
+                // Show splash screen
+                SplashScreen splash = context.getBean(SplashScreen.class);
+                splash.showSplash();
+                
+                // Initialize main application after splash
+                Timer timer = new Timer(3000, e -> {
+                    splash.hideSplash();
+                    showMainApplication();
+                });
+                timer.setRepeats(false);
+                timer.start();
+                
             } catch (Exception e) {
-                log.warn("Could not load application icon", e);
+                log.error("Failed to start application", e);
+                System.exit(1);
             }
-            
-            splashStage.setResizable(false);
-            splashStage.centerOnScreen();
-            splashStage.show();
-            
-            log.info("Splash screen displayed successfully");
-            return splashStage;
-            
-        } catch (Exception e) {
-            log.error("Could not load splash screen", e);
-            throw new RuntimeException("Failed to show splash screen", e);
-        }
-    }
-
-    private void showMainApplication(Stage primaryStage) throws Exception {
-        // Initialize ViewManager with the primary stage
-        ViewManager viewManager = context.getBean(ViewManager.class);
-        viewManager.setPrimaryStage(primaryStage);
-        
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
-        loader.setControllerFactory(context::getBean);
-        Parent root = loader.load();
-
-        Scene scene = new Scene(root, 1200, 800);
-        scene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
-
-        primaryStage.setTitle("Packaroo - Java Application Packager");
-        primaryStage.setScene(scene);
-        
-        // Try to load icon, but don't fail if it's missing
-        try {
-            var iconStream = getClass().getResourceAsStream("/images/icon.png");
-            if (iconStream != null) {
-                primaryStage.getIcons().add(new Image(iconStream));
-            }
-        } catch (Exception e) {
-            log.warn("Could not load application icon", e);
-        }
-        
-        primaryStage.setMinWidth(800);
-        primaryStage.setMinHeight(600);
-        primaryStage.centerOnScreen();
-        primaryStage.show();
-
-        // Handle window close event
-        primaryStage.setOnCloseRequest(event -> {
-            Platform.exit();
-            System.exit(0);
         });
     }
-
-    @Override
-    public void stop() throws Exception {
-        if (context != null) {
-            context.close();
+    
+    private static void showMainApplication() {
+        try {
+            MainFrame mainFrame = context.getBean(MainFrame.class);
+            mainFrame.setVisible(true);
+            log.info("Main application window displayed successfully");
+        } catch (Exception e) {
+            log.error("Failed to show main application", e);
+            System.exit(1);
         }
-        Platform.exit();
+    }
+    
+    public static ConfigurableApplicationContext getContext() {
+        return context;
     }
 }
