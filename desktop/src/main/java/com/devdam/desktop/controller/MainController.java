@@ -937,8 +937,6 @@ public class MainController implements Initializable {
         
         // Apply theme
         applyTheme(isDarkTheme);
-        
-        logToConsole("Theme toggle: " + (isDarkTheme ? "Dark" : "Light"));
     }
     
     private void loadThemePreference() {

@@ -19,6 +19,7 @@
 .root.dark-theme {
     -fx-base: #1a1a2e;
     -fx-background: #16213e;
+    -fx-background-color: #16213e;
     -fx-control-inner-background: rgba(26, 26, 46, 0.9);
     -fx-accent: #6DC7FF;
     -fx-default-button: #1A6DFF;
@@ -31,6 +32,12 @@
 .main-container {
     -fx-background-color: rgba(230, 171, 255, 0.05);
     -fx-effect: innershadow(gaussian, rgba(26, 109, 255, 0.1), 8, 0, 0, 0);
+}
+
+/* Dark Theme Main Container Override */
+.root.dark-theme .main-container {
+    -fx-background-color: #16213e;
+    -fx-effect: innershadow(gaussian, rgba(109, 199, 255, 0.2), 8, 0, 0, 0);
 }
 
 /* ===== SPLASH SCREEN ===== */
@@ -90,6 +97,71 @@
     -fx-font-weight: bold;
     -fx-text-fill: #1A6DFF;
     -fx-effect: dropshadow(gaussian, rgba(26, 109, 255, 0.3), 2, 0, 0, 1);
+}
+
+
+/* Dark Theme Container Overrides */
+.root.dark-theme .scroll-pane .viewport {
+    -fx-background-color: #16213e;
+}
+
+.root.dark-theme .split-pane {
+    -fx-background-color: #16213e;
+}
+
+.root.dark-theme .titled-pane {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #444444;
+}
+
+.root.dark-theme .titled-pane > .content {
+    -fx-background-color: #16213e;
+}
+
+.root.dark-theme .titled-pane > .title {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #444444;
+}
+
+.root.dark-theme .titled-pane > .title > .text {
+    -fx-text-fill: #cccccc;
+}
+
+.root.dark-theme .titled-pane > .title:hover {
+    -fx-background-color: rgba(109, 199, 255, 0.1);
+}
+
+.root.dark-theme .text-field, .root.dark-theme .text-area {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #444444;
+    -fx-text-fill: #cccccc;
+}
+
+.root.dark-theme .text-field:focused, .root.dark-theme .text-area:focused {
+    -fx-border-color: #6DC7FF;
+}
+
+.root.dark-theme .text-field, .root.dark-theme .text-area {
+    -fx-prompt-text-fill: #888888;
+}
+
+.root.dark-theme .check-list-view {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #444444;
+}
+
+.root.dark-theme .check-list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #cccccc;
+}
+
+.root.dark-theme .check-list-view .list-cell:selected {
+    -fx-background-color: #6DC7FF;
+    -fx-text-fill: #16213e;
+}
+
+.root.dark-theme .check-list-view .list-cell:hover {
+    -fx-background-color: rgba(109, 199, 255, 0.2);
 }
 
 .console-header {
@@ -188,6 +260,27 @@
 }
 
 .combo-box .arrow {
+    -fx-background-color: #1A6DFF;
+}
+
+/* Dark Theme Combo Box Overrides */
+.root.dark-theme .combo-box {
+    -fx-background-color: #16213e;
+    -fx-border-color: #6DC7FF;
+    -fx-text-fill: #cccccc;
+}
+
+.root.dark-theme .combo-box:focused {
+    -fx-border-color: #1A6DFF;
+}
+
+.root.dark-theme .combo-box .list-cell:filled:hover,
+.root.dark-theme .combo-box .list-cell:filled:selected {
+    -fx-background-color: #1A6DFF;
+    -fx-text-fill: #16213e;
+}
+
+.root.dark-theme .combo-box .arrow {
     -fx-background-color: #1A6DFF;
 }
 
@@ -346,6 +439,12 @@
     -fx-font-style: italic;
 }
 
+/* Dark Theme Status Label Override */
+.root.dark-theme .status-label {
+    -fx-text-fill: #6DC7FF;
+    -fx-font-style: italic;
+}
+
 /* ===== CHECK LIST VIEW ===== */
 .check-list-view {
     -fx-background-color: white;
@@ -390,7 +489,7 @@
 
 /* Dark Theme Menu Bar Overrides */
 .root.dark-theme .menu-bar {
-    -fx-background-color: rgba(23, 23, 41, 0.95);
+    -fx-background-color: #1a1a2e;
     -fx-border-color: #444444;
 }
 
@@ -439,6 +538,19 @@
     -fx-background-color: #a6a6a6;
 }
 
+/* Dark Theme Scroll Pane Overrides */
+.root.dark-theme .scroll-pane .scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.root.dark-theme .scroll-pane .scroll-bar .thumb {
+    -fx-background-color: #6DC7FF;
+}
+
+.root.dark-theme .scroll-pane .scroll-bar .thumb:hover {
+    -fx-background-color: #6DC7FF;
+}
+
 /* ===== TOOLTIPS ===== */
 .tooltip {
     -fx-background-color: #1e1e1e;
@@ -447,4 +559,59 @@
     -fx-font-size: 11px;
     -fx-padding: 4px 8px;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 5, 0, 0, 2);
+}
+
+/* ===== DIALOGS ===== */
+.dialog-pane {
+    -fx-background-color: white;
+    -fx-border-color: #d1d1d1;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: #f3f2f1;
+    -fx-background-radius: 5px 5px 0 0;
+}
+
+.dialog-pane .content {
+    -fx-background-color: white;
+    -fx-padding: 20px;
+}
+
+.dialog-pane .button-bar {
+    -fx-background-color: #f8f8f8;
+    -fx-border-color: #d1d1d1;
+    -fx-border-width: 1px 0 0 0;
+    -fx-padding: 10px;
+}
+
+/* Dark Theme Dialog Overrides */
+.root.dark-theme .dialog-pane {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #444444;
+}
+
+.root.dark-theme .dialog-pane .header-panel {
+    -fx-background-color: #16213e;
+}
+
+.root.dark-theme .dialog-pane .content {
+    -fx-background-color: #1a1a2e;
+    -fx-text-fill: #cccccc;
+}
+
+.root.dark-theme .dialog-pane .button-bar {
+    -fx-background-color: #16213e;
+    -fx-border-color: #444444;
+}
+
+.root.dark-theme .dialog-pane .label {
+    -fx-text-fill: #cccccc;
+}
+
+.root.dark-theme .dialog-pane .header-panel .label {
+    -fx-text-fill: #6DC7FF;
+    -fx-font-weight: bold;
 }
