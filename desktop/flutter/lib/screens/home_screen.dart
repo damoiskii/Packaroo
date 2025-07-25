@@ -6,6 +6,8 @@ import '../providers/build_provider.dart';
 import '../widgets/project_list.dart';
 import '../widgets/project_details.dart';
 import '../widgets/build_monitor.dart';
+import '../widgets/jar_analyzer_widget.dart';
+import '../widgets/jar_analyzer_widget.dart';
 import 'project_edit_screen.dart';
 import 'settings_screen.dart';
 
@@ -33,6 +35,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(Symbols.folder),
                 selectedIcon: Icon(Symbols.folder),
                 label: Text('Projects'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Symbols.analytics),
+                selectedIcon: Icon(Symbols.analytics),
+                label: Text('JAR Analyzer'),
               ),
               NavigationRailDestination(
                 icon: Icon(Symbols.build),
@@ -231,8 +238,10 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return 'Projects';
       case 1:
-        return 'Build Monitor';
+        return 'JAR Analyzer';
       case 2:
+        return 'Build Monitor';
+      case 3:
         return 'Settings';
       default:
         return 'Packaroo';
@@ -244,8 +253,10 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return _buildProjectsContent();
       case 1:
-        return const BuildMonitor();
+        return _buildJarAnalyzerContent();
       case 2:
+        return const BuildMonitor();
+      case 3:
         return const SettingsScreen();
       default:
         return _buildProjectsContent();
@@ -332,6 +343,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildJarAnalyzerContent() {
+    return const Padding(
+      padding: EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          Expanded(
+            child: JarAnalyzerWidget(),
+          ),
+        ],
+      ),
     );
   }
 

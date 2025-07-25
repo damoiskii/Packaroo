@@ -1,12 +1,167 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:path/path.dart' as path;
 import '../models/packaroo_project.dart';
 import '../models/build_progress.dart';
 import '../models/app_models.dart';
+import 'jar_analyzer_service.dart';
 
 class PackageService {
   static const String _jpackageCommand = 'jpackage';
   static const String _jlinkCommand = 'jlink';
+
+  final JarAnalyzerService _jarAnalyzer = JarAnalyzerService();
+
+  /// Validates a project before building
+  Future<ValidationResult> validateProjectForBuild(
+      PackarooProject project) async {
+    final errors = <String>[];
+    final warnings = <String>[];
+
+    // Check JAR file exists
+    if (project.jarPath.isEmpty) {
+      errors.add('JAR file path is required');
+    } else {
+      final jarFile = File(project.jarPath);
+      if (!await jarFile.exists()) {
+        errors.add('JAR file not found: ${project.jarPath}');
+      }
+    }
+
+    // Check main class
+    if (project.mainClass.isEmpty) {
+      warnings.add('Main class not specified');
+    }
+
+    // Check output path
+    if (project.outputPath.isEmpty) {
+      errors.add('Output path is required');
+    } else {
+      final outputDir = Directory(project.outputPath);
+      try {
+        if (!await outputDir.exists()) {
+          await outputDir.create(recursive: true);
+        }
+      } catch (e) {
+        errors.add('Cannot create output directory: $e');
+      }
+    }
+
+    // Check JDK path if specified
+    if (project.jdkPath.isNotEmpty) {
+      final jdkDir = Directory(project.jdkPath);
+      if (!await jdkDir.exists()) {
+        errors.add('JDK path not found: ${project.jdkPath}');
+      } else {
+        // Validate Java environment
+        final javaEnv =
+            await _jarAnalyzer.validateJavaEnvironment(project.jdkPath);
+        if (!javaEnv.isValid) {
+          errors.add(
+              'Invalid Java environment: ${javaEnv.error ?? "Unknown error"}');
+        } else if (!javaEnv.supportsJpackage) {
+          errors.add(
+              'Java version does not support jpackage (requires Java 14+)');
+        }
+      }
+    }
+
+    // Check package type
+    if (project.packageType.isEmpty) {
+      warnings.add('Package type not specified');
+    }
+
+    return ValidationResult(
+      isValid: errors.isEmpty,
+      errors: errors,
+      warnings: warnings,
+    );
+  }
+
+  /// Analyzes a JAR file and creates a project
+  Future<PackarooProject> analyzeAndCreateProject(String jarPath) async {
+    final analysisResult = await _jarAnalyzer.analyzeJar(jarPath);
+
+    final project = PackarooProject(
+      name: analysisResult.suggestedAppName,
+      description: 'Generated from ${analysisResult.fileName}',
+      projectPath: path.dirname(jarPath),
+      outputPath: path.join(path.dirname(jarPath), 'dist'),
+      jarPath: jarPath,
+      mainClass: analysisResult.mainClass,
+      appName: analysisResult.suggestedAppName,
+      appVersion: analysisResult.suggestedVersion,
+      appVendor: analysisResult.suggestedVendor,
+      additionalModules: analysisResult.modules,
+    );
+
+    return project;
+  }
+
+  /// Builds packages for multiple platforms
+  Future<List<BuildProgress>> buildForAllPlatforms(
+    PackarooProject project,
+    List<String> targetPlatforms,
+    Function(BuildProgress) onProgressUpdate,
+  ) async {
+    final builds = <BuildProgress>[];
+
+    for (final platform in targetPlatforms) {
+      final platformProject = _createPlatformProject(project, platform);
+      final build = await buildPackage(platformProject, onProgressUpdate);
+      builds.add(build);
+    }
+
+    return builds;
+  }
+
+  /// Creates a platform-specific project configuration
+  PackarooProject _createPlatformProject(
+      PackarooProject base, String platform) {
+    final platformProject = PackarooProject(
+      id: '${base.id}_$platform',
+      name: base.name,
+      description: base.description,
+      projectPath: base.projectPath,
+      outputPath: path.join(base.outputPath, platform),
+      jarPath: base.jarPath,
+      mainClass: base.mainClass,
+      modulePath: base.modulePath,
+      jdkPath: base.jdkPath,
+      appName: base.appName,
+      appVersion: base.appVersion,
+      appDescription: base.appDescription,
+      appVendor: base.appVendor,
+      appCopyright: base.appCopyright,
+      iconPath: base.iconPath,
+      packageType: _getDefaultPackageType(platform),
+      jvmOptions: List.from(base.jvmOptions),
+      appArguments: List.from(base.appArguments),
+      additionalModules: List.from(base.additionalModules),
+      useJlink: base.useJlink,
+      includeAllModules: base.includeAllModules,
+      stripDebug: base.stripDebug,
+      compress: base.compress,
+      noHeaderFiles: base.noHeaderFiles,
+      noManPages: base.noManPages,
+    );
+
+    return platformProject;
+  }
+
+  /// Gets default package type for platform
+  String _getDefaultPackageType(String platform) {
+    switch (platform.toLowerCase()) {
+      case 'windows':
+        return 'msi';
+      case 'macos':
+        return 'dmg';
+      case 'linux':
+        return 'deb';
+      default:
+        return 'app-image';
+    }
+  }
 
   /// Builds a package using jpackage
   Future<BuildProgress> buildPackage(
@@ -27,7 +182,7 @@ class PackageService {
       buildProgress.updateProgress(0.1, 'Validating project');
       onProgressUpdate(buildProgress);
 
-      final validation = await validateProject(project);
+      final validation = await validateProjectForBuild(project);
       if (!validation.isValid) {
         buildProgress
             .fail('Validation failed: ${validation.errors.join(', ')}');
@@ -179,13 +334,13 @@ class PackageService {
     // Run jpackage with real-time output
     final process = await Process.start(_jpackageCommand, jpackageArgs);
 
-    process.stdout.transform(systemEncoding.decoder).listen((data) {
+    process.stdout.transform(utf8.decoder).listen((data) {
       progress.addLog('STDOUT: $data');
       progress.updateProgress(0.8, 'Creating package...');
       onProgressUpdate(progress);
     });
 
-    process.stderr.transform(systemEncoding.decoder).listen((data) {
+    process.stderr.transform(utf8.decoder).listen((data) {
       progress.addLog('STDERR: $data');
     });
 
