@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
 import '../models/packaroo_project.dart';
+import '../providers/project_provider.dart';
+import '../services/jar_analyzer_service.dart';
+import '../utils/string_utils.dart';
 
 class ProjectEditScreen extends StatefulWidget {
   final PackarooProject? project;
@@ -11,6 +16,83 @@ class ProjectEditScreen extends StatefulWidget {
 }
 
 class _ProjectEditScreenState extends State<ProjectEditScreen> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _jarPathController;
+  late final TextEditingController _mainClassController;
+  late final TextEditingController _appNameController;
+  late final TextEditingController _appVersionController;
+  late final TextEditingController _appVendorController;
+  late final TextEditingController _outputPathController;
+  late final TextEditingController _jdkPathController;
+
+  final _formKey = GlobalKey<FormState>();
+  final JarAnalyzerService _jarAnalyzer = JarAnalyzerService();
+
+  bool _isModified = false;
+  bool _isAnalyzing = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final project = widget.project;
+
+    _nameController = TextEditingController(text: project?.name ?? '');
+    _descriptionController =
+        TextEditingController(text: project?.description ?? '');
+    _jarPathController = TextEditingController(text: project?.jarPath ?? '');
+    _mainClassController =
+        TextEditingController(text: project?.mainClass ?? '');
+    _appNameController = TextEditingController(text: project?.appName ?? '');
+    _appVersionController =
+        TextEditingController(text: project?.appVersion ?? '1.0.0');
+    _appVendorController =
+        TextEditingController(text: project?.appVendor ?? '');
+    _outputPathController =
+        TextEditingController(text: project?.outputPath ?? '');
+    _jdkPathController = TextEditingController(text: project?.jdkPath ?? '');
+
+    // Add listeners to track modifications
+    _addModificationListeners();
+  }
+
+  void _addModificationListeners() {
+    for (final controller in [
+      _nameController,
+      _descriptionController,
+      _jarPathController,
+      _mainClassController,
+      _appNameController,
+      _appVersionController,
+      _appVendorController,
+      _outputPathController,
+      _jdkPathController,
+    ]) {
+      controller.addListener(() {
+        if (!_isModified) {
+          setState(() {
+            _isModified = true;
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _jarPathController.dispose();
+    _mainClassController.dispose();
+    _appNameController.dispose();
+    _appVersionController.dispose();
+    _appVendorController.dispose();
+    _outputPathController.dispose();
+    _jdkPathController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,49 +100,449 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
         title: Text(widget.project == null ? 'New Project' : 'Edit Project'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => _handleCancel(),
             child: const Text('Cancel'),
           ),
           const SizedBox(width: 8),
           FilledButton(
-            onPressed: () {
-              // TODO: Implement save functionality
-              Navigator.of(context).pop();
-            },
+            onPressed: _isFormValid() ? _handleSave : null,
             child: const Text('Save'),
           ),
           const SizedBox(width: 16),
         ],
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.construction,
-              size: 64,
-              color: Colors.grey,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Project Editor',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
+      body: Form(
+        key: _formKey,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left column
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Project Information',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildTextField(
+                      controller: _nameController,
+                      label: 'Project Name',
+                      hint: 'Enter project name',
+                      isRequired: true,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Project name is required';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        // Auto-update app name when project name changes
+                        if (_appNameController.text.isEmpty ||
+                            _appNameController.text ==
+                                StringUtils.toTitleCase(_nameController.text)) {
+                          _appNameController.text =
+                              StringUtils.toTitleCase(value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _descriptionController,
+                      label: 'Description',
+                      hint: 'Enter project description (optional)',
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildJarFilePickerField(),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _mainClassController,
+                      label: 'Main Class',
+                      hint: 'e.g., com.example.MainClass',
+                      isRequired: true,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Main class is required';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Coming soon...',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
+
+              const SizedBox(width: 32),
+
+              // Right column
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Application Details',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildTextField(
+                      controller: _appNameController,
+                      label: 'Application Name',
+                      hint: 'Display name for the application',
+                      isRequired: true,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Application name is required';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _appVersionController,
+                      label: 'Version',
+                      hint: 'e.g., 1.0.0',
+                      isRequired: true,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Version is required';
+                        }
+                        if (!StringUtils.isValidVersion(value.trim())) {
+                          return 'Invalid version format (e.g., 1.0.0)';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _appVendorController,
+                      label: 'Vendor',
+                      hint: 'Organization or developer name',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildFilePickerField(
+                      controller: _outputPathController,
+                      label: 'Output Directory',
+                      hint: 'Select output directory',
+                      isRequired: true,
+                      fileType: 'directory',
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Output directory is required';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildFilePickerField(
+                      controller: _jdkPathController,
+                      label: 'JDK Path (Optional)',
+                      hint: 'Select JDK installation directory',
+                      fileType: 'directory',
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    String? hint,
+    bool isRequired = false,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+    void Function(String)? onChanged,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      validator: validator,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: isRequired ? '$label *' : label,
+        hintText: hint,
+        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surface,
+      ),
+    );
+  }
+
+  Widget _buildFilePickerField({
+    required TextEditingController controller,
+    required String label,
+    String? hint,
+    bool isRequired = false,
+    required String fileType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: isRequired ? '$label *' : label,
+        hintText: hint,
+        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surface,
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.folder_open),
+          onPressed: () => _pickFile(controller, fileType),
+        ),
+      ),
+      readOnly: true,
+    );
+  }
+
+  Future<void> _pickFile(
+      TextEditingController controller, String fileType) async {
+    try {
+      String? selectedPath;
+
+      if (fileType == 'directory') {
+        selectedPath = await FilePicker.platform.getDirectoryPath(
+          dialogTitle: 'Select Directory',
+        );
+      } else {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: [fileType],
+          dialogTitle: 'Select ${fileType.toUpperCase()} file',
+        );
+        selectedPath = result?.files.single.path;
+      }
+
+      if (selectedPath != null) {
+        controller.text = selectedPath;
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to select file: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildJarFilePickerField() {
+    return TextFormField(
+      controller: _jarPathController,
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return 'JAR file is required';
+        }
+        return null;
+      },
+      decoration: InputDecoration(
+        labelText: 'JAR File Path *',
+        hintText: 'Select JAR file to analyze',
+        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surface,
+        suffixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_isAnalyzing) ...[
+              const Padding(
+                padding: EdgeInsets.all(12.0),
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ] else ...[
+              IconButton(
+                icon: const Icon(Icons.folder_open),
+                onPressed: _pickAndAnalyzeJar,
+                tooltip: 'Select and analyze JAR file',
+              ),
+            ],
+          ],
+        ),
+      ),
+      readOnly: true,
+    );
+  }
+
+  Future<void> _pickAndAnalyzeJar() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jar'],
+        dialogTitle: 'Select JAR file to analyze',
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final jarPath = result.files.single.path!;
+        await _analyzeJarAndPopulateFields(jarPath);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to select JAR file: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _analyzeJarAndPopulateFields(String jarPath) async {
+    setState(() {
+      _isAnalyzing = true;
+    });
+
+    try {
+      // Analyze the JAR file
+      final analysisResult = await _jarAnalyzer.analyzeJar(jarPath);
+
+      // Auto-populate all fields with analyzed data
+      setState(() {
+        _jarPathController.text = jarPath;
+
+        // Format app name to title case
+        final formattedAppName =
+            StringUtils.toTitleCase(analysisResult.suggestedAppName);
+
+        // Only update fields if they're currently empty (don't override user changes)
+        if (_nameController.text.isEmpty) {
+          _nameController.text = formattedAppName;
+        }
+
+        if (_mainClassController.text.isEmpty) {
+          _mainClassController.text = analysisResult.mainClass;
+        }
+
+        if (_appNameController.text.isEmpty) {
+          _appNameController.text = formattedAppName;
+        }
+
+        if (_appVersionController.text.isEmpty ||
+            _appVersionController.text == '1.0.0') {
+          _appVersionController.text = analysisResult.suggestedVersion;
+        }
+
+        if (_appVendorController.text.isEmpty) {
+          _appVendorController.text = analysisResult.suggestedVendor;
+        }
+
+        // Set default output path if empty
+        if (_outputPathController.text.isEmpty) {
+          final jarDir = jarPath.substring(0, jarPath.lastIndexOf('/'));
+          _outputPathController.text = '$jarDir/dist';
+        }
+
+        _isAnalyzing = false;
+      });
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'JAR analyzed successfully! Found main class: ${analysisResult.mainClass}'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isAnalyzing = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to analyze JAR: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  bool _isFormValid() {
+    return _nameController.text.trim().isNotEmpty &&
+        _jarPathController.text.trim().isNotEmpty &&
+        _mainClassController.text.trim().isNotEmpty &&
+        _appNameController.text.trim().isNotEmpty &&
+        _appVersionController.text.trim().isNotEmpty &&
+        _outputPathController.text.trim().isNotEmpty &&
+        StringUtils.isValidVersion(_appVersionController.text.trim());
+  }
+
+  void _handleCancel() {
+    if (_isModified) {
+      showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Unsaved Changes'),
+          content: const Text(
+              'You have unsaved changes. Are you sure you want to cancel?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Continue Editing'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Discard Changes'),
+            ),
+          ],
+        ),
+      ).then((confirmed) {
+        if (confirmed == true) {
+          Navigator.of(context).pop();
+        }
+      });
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _handleSave() {
+    if (_formKey.currentState!.validate()) {
+      final projectProvider = context.read<ProjectProvider>();
+
+      final project = PackarooProject(
+        id: widget.project?.id,
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim(),
+        projectPath: '', // Will be set by the provider
+        outputPath: _outputPathController.text.trim(),
+        jarPath: _jarPathController.text.trim(),
+        mainClass: _mainClassController.text.trim(),
+        appName: _appNameController.text.trim(),
+        appVersion: _appVersionController.text.trim(),
+        appVendor: _appVendorController.text.trim(),
+        jdkPath: _jdkPathController.text.trim(),
+        additionalModules: widget.project?.additionalModules ?? [],
+        jvmOptions: widget.project?.jvmOptions ?? [],
+        packageType: widget.project?.packageType ?? 'app-image',
+        createdDate: widget.project?.createdDate,
+        lastModified: DateTime.now(),
+      );
+
+      if (widget.project == null) {
+        projectProvider.createProject(project);
+      } else {
+        projectProvider.updateProject(project);
+      }
+
+      Navigator.of(context).pop(project);
+    }
   }
 }

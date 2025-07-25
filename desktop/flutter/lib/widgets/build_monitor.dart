@@ -64,8 +64,9 @@ class BuildMonitor extends StatelessWidget {
                           const SizedBox(height: 12),
                           LinearProgressIndicator(
                             value: build.progress,
-                            backgroundColor:
-                                Theme.of(context).colorScheme.surfaceContainerHighest,
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
                           ),
                           const SizedBox(height: 12),
                           Row(
@@ -214,21 +215,21 @@ class BuildMonitor extends StatelessWidget {
                                     Chip(
                                       label: const Text('Success'),
                                       backgroundColor:
-                                          Colors.green.withOpacity(0.2),
+                                          Colors.green.withValues(alpha: 0.2),
                                       side: BorderSide.none,
                                     )
                                   else if (build.isFailed)
                                     Chip(
                                       label: const Text('Failed'),
                                       backgroundColor:
-                                          Colors.red.withOpacity(0.2),
+                                          Colors.red.withValues(alpha: 0.2),
                                       side: BorderSide.none,
                                     )
                                   else if (build.isCancelled)
                                     Chip(
                                       label: const Text('Cancelled'),
                                       backgroundColor:
-                                          Colors.orange.withOpacity(0.2),
+                                          Colors.orange.withValues(alpha: 0.2),
                                       side: BorderSide.none,
                                     ),
                                   const SizedBox(width: 8),
@@ -247,7 +248,7 @@ class BuildMonitor extends StatelessWidget {
                                     color: Theme.of(context)
                                         .colorScheme
                                         .surfaceContainerHighest
-                                        .withOpacity(0.3),
+                                        .withValues(alpha: 0.3),
                                     borderRadius: const BorderRadius.only(
                                       bottomLeft: Radius.circular(12),
                                       bottomRight: Radius.circular(12),
@@ -269,8 +270,8 @@ class BuildMonitor extends StatelessWidget {
                                           if (build.errorMessage != null)
                                             Chip(
                                               label: const Text('Error'),
-                                              backgroundColor:
-                                                  Colors.red.withOpacity(0.2),
+                                              backgroundColor: Colors.red
+                                                  .withValues(alpha: 0.2),
                                               side: BorderSide.none,
                                             ),
                                         ],
@@ -290,7 +291,7 @@ class BuildMonitor extends StatelessWidget {
                                             color: Theme.of(context)
                                                 .colorScheme
                                                 .outline
-                                                .withOpacity(0.2),
+                                                .withValues(alpha: 0.2),
                                           ),
                                         ),
                                         child: SingleChildScrollView(
@@ -405,9 +406,9 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

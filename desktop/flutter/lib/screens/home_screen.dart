@@ -344,14 +344,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           Expanded(
-            child: JarAnalyzerWidget(
-              onProjectCreated: () {
-                // Switch to Projects tab (index 0)
-                setState(() {
-                  _selectedIndex = 0;
-                });
-              },
-            ),
+            child: const JarAnalyzerWidget(),
           ),
         ],
       ),

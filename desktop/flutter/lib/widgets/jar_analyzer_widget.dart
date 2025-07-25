@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:provider/provider.dart';
 import '../services/jar_analyzer_service.dart';
-import '../services/package_service.dart';
-import '../providers/project_provider.dart';
 
 class JarAnalyzerWidget extends StatefulWidget {
-  final VoidCallback? onProjectCreated;
-
-  const JarAnalyzerWidget({
-    super.key,
-    this.onProjectCreated,
-  });
+  const JarAnalyzerWidget({super.key});
 
   @override
   State<JarAnalyzerWidget> createState() => _JarAnalyzerWidgetState();
@@ -19,7 +11,6 @@ class JarAnalyzerWidget extends StatefulWidget {
 
 class _JarAnalyzerWidgetState extends State<JarAnalyzerWidget> {
   final JarAnalyzerService _analyzer = JarAnalyzerService();
-  final PackageService _packageService = PackageService();
 
   String? _selectedJarPath;
   JarAnalysisResult? _analysisResult;
@@ -63,63 +54,6 @@ class _JarAnalyzerWidgetState extends State<JarAnalyzerWidget> {
         _errorMessage = 'Analysis failed: $e';
         _isAnalyzing = false;
       });
-    }
-  }
-
-  Future<void> _createProjectFromJar() async {
-    if (_analysisResult == null) return;
-
-    try {
-      final project = await _packageService
-          .analyzeAndCreateProject(_analysisResult!.jarPath);
-
-      if (mounted) {
-        final projectProvider = context.read<ProjectProvider>();
-        await projectProvider.createProject(project);
-
-        // Select the newly created project
-        projectProvider.selectProject(project);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Project "${project.name}" created successfully'),
-            action: SnackBarAction(
-              label: 'View Projects',
-              onPressed: () {
-                // Find the parent widget that can switch tabs
-                // We'll trigger a callback to switch to projects tab
-                _switchToProjectsTab();
-              },
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to create project: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
-  }
-
-  void _switchToProjectsTab() {
-    // Call the callback if provided
-    if (widget.onProjectCreated != null) {
-      widget.onProjectCreated!();
-    } else {
-      // Fallback message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Check the Projects tab to see your new project'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
     }
   }
 
@@ -314,12 +248,44 @@ class _JarAnalyzerWidgetState extends State<JarAnalyzerWidget> {
           const SizedBox(height: 16),
         ],
 
-        // Create project button
-        Center(
-          child: FilledButton.icon(
-            onPressed: _createProjectFromJar,
-            icon: const Icon(Icons.add_circle_outline),
-            label: const Text('Create Project from JAR'),
+        // Information message about creating projects
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Create a New Project',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'To create a project from this JAR, click "New Project" and select this JAR file. All information will be auto-populated.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
 

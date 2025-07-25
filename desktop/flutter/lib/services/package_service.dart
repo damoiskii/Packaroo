@@ -4,6 +4,7 @@ import 'package:path/path.dart' as path;
 import '../models/packaroo_project.dart';
 import '../models/build_progress.dart';
 import '../models/app_models.dart';
+import '../utils/string_utils.dart';
 import 'jar_analyzer_service.dart';
 
 class PackageService {
@@ -82,14 +83,18 @@ class PackageService {
   Future<PackarooProject> analyzeAndCreateProject(String jarPath) async {
     final analysisResult = await _jarAnalyzer.analyzeJar(jarPath);
 
+    // Format the app name to title case
+    final formattedAppName =
+        StringUtils.toTitleCase(analysisResult.suggestedAppName);
+
     final project = PackarooProject(
-      name: analysisResult.suggestedAppName,
-      description: 'Generated from ${analysisResult.fileName}',
+      name: formattedAppName,
+      description: '', // Leave empty for user to fill
       projectPath: path.dirname(jarPath),
       outputPath: path.join(path.dirname(jarPath), 'dist'),
       jarPath: jarPath,
       mainClass: analysisResult.mainClass,
-      appName: analysisResult.suggestedAppName,
+      appName: formattedAppName,
       appVersion: analysisResult.suggestedVersion,
       appVendor: analysisResult.suggestedVendor,
       additionalModules: analysisResult.modules,
