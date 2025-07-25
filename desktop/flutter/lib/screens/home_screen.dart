@@ -7,7 +7,7 @@ import '../widgets/project_list.dart';
 import '../widgets/project_details.dart';
 import '../widgets/build_monitor.dart';
 import '../widgets/jar_analyzer_widget.dart';
-import '../widgets/jar_analyzer_widget.dart';
+import '../widgets/app_icon.dart';
 import 'project_edit_screen.dart';
 import 'settings_screen.dart';
 
@@ -74,11 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     children: [
                       const SizedBox(width: 16),
-                      Icon(
-                        Symbols.package_2,
-                        size: 32,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                      const AppIcon(size: 32, showTooltip: true),
                       const SizedBox(width: 8),
                       Text(
                         'Packaroo',
@@ -92,11 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 16),
                 ] else ...[
-                  Icon(
-                    Symbols.package_2,
-                    size: 32,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                  const AppIcon(size: 32, showTooltip: true),
                   const SizedBox(height: 16),
                 ],
               ],
@@ -347,12 +339,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildJarAnalyzerContent() {
-    return const Padding(
-      padding: EdgeInsets.all(16.0),
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
           Expanded(
-            child: JarAnalyzerWidget(),
+            child: JarAnalyzerWidget(
+              onProjectCreated: () {
+                // Switch to Projects tab (index 0)
+                setState(() {
+                  _selectedIndex = 0;
+                });
+              },
+            ),
           ),
         ],
       ),

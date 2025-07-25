@@ -6,7 +6,12 @@ import '../services/package_service.dart';
 import '../providers/project_provider.dart';
 
 class JarAnalyzerWidget extends StatefulWidget {
-  const JarAnalyzerWidget({super.key});
+  final VoidCallback? onProjectCreated;
+
+  const JarAnalyzerWidget({
+    super.key,
+    this.onProjectCreated,
+  });
 
   @override
   State<JarAnalyzerWidget> createState() => _JarAnalyzerWidgetState();
@@ -69,15 +74,21 @@ class _JarAnalyzerWidgetState extends State<JarAnalyzerWidget> {
           .analyzeAndCreateProject(_analysisResult!.jarPath);
 
       if (mounted) {
-        await context.read<ProjectProvider>().createProject(project);
+        final projectProvider = context.read<ProjectProvider>();
+        await projectProvider.createProject(project);
+
+        // Select the newly created project
+        projectProvider.selectProject(project);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Project "${project.name}" created successfully'),
             action: SnackBarAction(
-              label: 'View',
+              label: 'View Projects',
               onPressed: () {
-                Navigator.of(context).pop(project);
+                // Find the parent widget that can switch tabs
+                // We'll trigger a callback to switch to projects tab
+                _switchToProjectsTab();
               },
             ),
           ),
@@ -95,10 +106,27 @@ class _JarAnalyzerWidgetState extends State<JarAnalyzerWidget> {
     }
   }
 
+  void _switchToProjectsTab() {
+    // Call the callback if provided
+    if (widget.onProjectCreated != null) {
+      widget.onProjectCreated!();
+    } else {
+      // Fallback message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Check the Projects tab to see your new project'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,29 +262,42 @@ class _JarAnalyzerWidgetState extends State<JarAnalyzerWidget> {
           ),
           const SizedBox(height: 8),
           Container(
-            constraints: const BoxConstraints(maxHeight: 100),
+            constraints: const BoxConstraints(maxHeight: 120),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context)
+                    .colorScheme
+                    .outline
+                    .withValues(alpha: 0.3),
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: SingleChildScrollView(
+              padding: const EdgeInsets.all(8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: result.dependencies
                     .take(20)
-                    .map(
-                      (dep) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: Text(
-                          dep,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                    )
+                    .map((dep) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Text(
+                            dep,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ))
                     .toList(),
               ),
             ),
           ),
           if (result.dependencies.length > 20)
-            Text(
-              '... and ${result.dependencies.length - 20} more',
-              style: Theme.of(context).textTheme.bodySmall,
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '... and ${result.dependencies.length - 20} more',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
+              ),
             ),
           const SizedBox(height: 16),
         ],
@@ -281,6 +322,9 @@ class _JarAnalyzerWidgetState extends State<JarAnalyzerWidget> {
             label: const Text('Create Project from JAR'),
           ),
         ),
+
+        // Add bottom padding to ensure content is always accessible
+        const SizedBox(height: 24),
       ],
     );
   }

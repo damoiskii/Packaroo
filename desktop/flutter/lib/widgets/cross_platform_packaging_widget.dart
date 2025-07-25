@@ -298,7 +298,7 @@ class _CrossPlatformPackagingWidgetState
             if (build.status == BuildStatus.running) ...[
               LinearProgressIndicator(
                 value: build.progress,
-                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
               const SizedBox(height: 4),
               Text(

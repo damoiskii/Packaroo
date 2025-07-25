@@ -40,14 +40,44 @@ static void my_application_activate(GApplication* application) {
   if (use_header_bar) {
     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
     gtk_widget_show(GTK_WIDGET(header_bar));
-    gtk_header_bar_set_title(header_bar, "packaroo");
+    gtk_header_bar_set_title(header_bar, "Packaroo");
     gtk_header_bar_set_show_close_button(header_bar, TRUE);
     gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
   } else {
-    gtk_window_set_title(window, "packaroo");
+    gtk_window_set_title(window, "Packaroo");
   }
 
   gtk_window_set_default_size(window, 1280, 720);
+  
+  // Set the window icon
+  g_autoptr(GError) icon_error = nullptr;
+  g_autoptr(GdkPixbuf) icon = nullptr;
+  
+  // Try multiple paths for the icon
+  const char* icon_paths[] = {
+    "data/flutter_assets/assets/icons/icon.png",
+    "../data/flutter_assets/assets/icons/icon.png",
+    "../../data/flutter_assets/assets/icons/icon.png",
+    "/home/damoiskii/.local/share/icons/packaroo.png",
+    nullptr
+  };
+  
+  for (int i = 0; icon_paths[i] != nullptr; i++) {
+    icon = gdk_pixbuf_new_from_file(icon_paths[i], &icon_error);
+    if (icon != nullptr) {
+      break;
+    }
+    if (icon_error != nullptr) {
+      g_clear_error(&icon_error);
+    }
+  }
+  
+  if (icon != nullptr) {
+    gtk_window_set_icon(window, icon);
+  } else {
+    g_warning("Failed to load application icon from any path");
+  }
+  
   gtk_widget_show(GTK_WIDGET(window));
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();

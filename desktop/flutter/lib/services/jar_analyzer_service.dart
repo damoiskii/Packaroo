@@ -367,10 +367,12 @@ class JarAnalysisResult {
   /// Gets formatted file size
   String get formattedFileSize {
     if (fileSize < 1024) return '$fileSize B';
-    if (fileSize < 1024 * 1024)
+    if (fileSize < 1024 * 1024) {
       return '${(fileSize / 1024).toStringAsFixed(1)} KB';
-    if (fileSize < 1024 * 1024 * 1024)
+    }
+    if (fileSize < 1024 * 1024 * 1024) {
       return '${(fileSize / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
     return '${(fileSize / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
