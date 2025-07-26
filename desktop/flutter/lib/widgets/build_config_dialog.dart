@@ -36,6 +36,52 @@ class _BuildConfigDialogState extends State<BuildConfigDialog> {
     'jdk.zipfs',
   ];
 
+  // Get supported package types for current platform
+  List<DropdownMenuItem<String>> get _supportedPackageTypes {
+    final List<DropdownMenuItem<String>> items = [
+      const DropdownMenuItem(
+          value: 'app-image', child: Text('App Image (Universal)')),
+    ];
+
+    if (Platform.isLinux) {
+      items.addAll([
+        const DropdownMenuItem(
+            value: 'deb', child: Text('DEB Package (Linux)')),
+        const DropdownMenuItem(
+            value: 'rpm', child: Text('RPM Package (Linux)')),
+      ]);
+    } else if (Platform.isMacOS) {
+      items.addAll([
+        const DropdownMenuItem(
+            value: 'dmg', child: Text('DMG Package (macOS)')),
+        const DropdownMenuItem(
+            value: 'pkg', child: Text('PKG Package (macOS)')),
+      ]);
+    } else if (Platform.isWindows) {
+      items.addAll([
+        const DropdownMenuItem(
+            value: 'msi', child: Text('MSI Package (Windows)')),
+        const DropdownMenuItem(
+            value: 'exe', child: Text('EXE Package (Windows)')),
+      ]);
+    }
+
+    return items;
+  }
+
+  String get _defaultPackageType {
+    // Default to app-image, but ensure the current selection is valid for the platform
+    if (_project.packageType.isEmpty) return 'app-image';
+
+    final supportedTypes =
+        _supportedPackageTypes.map((item) => item.value).toList();
+    if (supportedTypes.contains(_project.packageType)) {
+      return _project.packageType;
+    }
+
+    return 'app-image'; // Fallback to universal type
+  }
+
   @override
   void initState() {
     super.initState();
@@ -374,30 +420,41 @@ class _BuildConfigDialogState extends State<BuildConfigDialog> {
               'Package Type',
               style: Theme.of(context).textTheme.titleSmall,
             ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primaryContainer
+                    .withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Symbols.info,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Running on ${Platform.operatingSystem}. Only ${Platform.operatingSystem} package types are available.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _project.packageType.isEmpty
-                  ? 'app-image'
-                  : _project.packageType,
+              value: _defaultPackageType,
               decoration: const InputDecoration(
                 labelText: 'Package Type',
                 border: OutlineInputBorder(),
               ),
-              items: const [
-                DropdownMenuItem(value: 'app-image', child: Text('App Image')),
-                DropdownMenuItem(
-                    value: 'deb', child: Text('DEB Package (Linux)')),
-                DropdownMenuItem(
-                    value: 'rpm', child: Text('RPM Package (Linux)')),
-                DropdownMenuItem(
-                    value: 'dmg', child: Text('DMG Package (macOS)')),
-                DropdownMenuItem(
-                    value: 'pkg', child: Text('PKG Package (macOS)')),
-                DropdownMenuItem(
-                    value: 'msi', child: Text('MSI Package (Windows)')),
-                DropdownMenuItem(
-                    value: 'exe', child: Text('EXE Package (Windows)')),
-              ],
+              items: _supportedPackageTypes,
               onChanged: (value) {
                 setState(() {
                   _project.packageType = value ?? 'app-image';
@@ -485,6 +542,33 @@ class _BuildConfigDialogState extends State<BuildConfigDialog> {
             Text(
               'JLink Options',
               style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primaryContainer
+                    .withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Symbols.lightbulb,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'For most JAR files (especially Spring Boot), disable JLink. Use JLink only for modular Java applications.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             SwitchListTile(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../providers/build_provider.dart';
@@ -266,6 +267,33 @@ class BuildMonitor extends StatelessWidget {
                                                 .textTheme
                                                 .titleSmall,
                                           ),
+                                          const SizedBox(width: 8),
+                                          IconButton(
+                                            icon: const Icon(
+                                                Symbols.content_copy),
+                                            iconSize: 16,
+                                            padding: const EdgeInsets.all(4),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 24,
+                                              minHeight: 24,
+                                            ),
+                                            tooltip: 'Copy build log',
+                                            onPressed: () =>
+                                                _copyBuildLog(context, build),
+                                          ),
+                                          IconButton(
+                                            icon:
+                                                const Icon(Symbols.description),
+                                            iconSize: 16,
+                                            padding: const EdgeInsets.all(4),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 24,
+                                              minHeight: 24,
+                                            ),
+                                            tooltip: 'Copy build details',
+                                            onPressed: () => _copyBuildDetails(
+                                                context, build),
+                                          ),
                                           const Spacer(),
                                           if (build.errorMessage != null)
                                             Chip(
@@ -387,6 +415,54 @@ class BuildMonitor extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _copyBuildLog(BuildContext context, BuildProgress build) async {
+    final logText = build.logs.join('\n');
+    await Clipboard.setData(ClipboardData(text: logText));
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Build log copied to clipboard (${build.logs.length} lines)'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void _copyBuildDetails(BuildContext context, BuildProgress build) async {
+    final buffer = StringBuffer();
+    buffer.writeln('=== Build Details ===');
+    buffer.writeln('Status: ${build.status.name}');
+    buffer.writeln('Current Step: ${build.currentStep}');
+    buffer.writeln('Progress: ${(build.progress * 100).toStringAsFixed(1)}%');
+    buffer.writeln('Start Time: ${build.startTime}');
+    if (build.endTime != null) {
+      buffer.writeln('End Time: ${build.endTime}');
+      buffer.writeln('Duration: ${build.durationString}');
+    }
+    if (build.errorMessage != null) {
+      buffer.writeln('Error: ${build.errorMessage}');
+    }
+    if (build.outputPath.isNotEmpty) {
+      buffer.writeln('Output Path: ${build.outputPath}');
+    }
+    buffer.writeln();
+    buffer.writeln('=== Build Log ===');
+    buffer.writeln(build.logs.join('\n'));
+
+    await Clipboard.setData(ClipboardData(text: buffer.toString()));
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Complete build details copied to clipboard'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
 

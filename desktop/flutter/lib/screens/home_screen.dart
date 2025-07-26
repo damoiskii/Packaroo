@@ -435,6 +435,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (result != null && mounted) {
+      // Update the project with the new configuration
+      final projectProvider = context.read<ProjectProvider>();
+      await projectProvider.updateProject(result);
+
       // Start build with the configured project
       final buildProvider = context.read<BuildProvider>();
       await buildProvider.startBuild(result);

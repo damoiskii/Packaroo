@@ -123,6 +123,9 @@ class PackageService {
   /// Creates a platform-specific project configuration
   PackarooProject _createPlatformProject(
       PackarooProject base, String platform) {
+    final selectedPackageType =
+        _getValidPackageTypeForPlatform(base.packageType, platform);
+
     final platformProject = PackarooProject(
       id: '${base.id}_$platform',
       name: base.name,
@@ -139,7 +142,7 @@ class PackageService {
       appVendor: base.appVendor,
       appCopyright: base.appCopyright,
       iconPath: base.iconPath,
-      packageType: _getDefaultPackageType(platform),
+      packageType: selectedPackageType,
       jvmOptions: List.from(base.jvmOptions),
       appArguments: List.from(base.appArguments),
       additionalModules: List.from(base.additionalModules),
@@ -165,6 +168,37 @@ class PackageService {
         return 'deb';
       default:
         return 'app-image';
+    }
+  }
+
+  /// Gets a valid package type for the platform, respecting user choice
+  String _getValidPackageTypeForPlatform(String selectedType, String platform) {
+    // If user selected app-image, it's always valid
+    if (selectedType == 'app-image') {
+      return selectedType;
+    }
+
+    // Check if the selected type is valid for the current platform
+    final validTypes = _getValidPackageTypesForPlatform(platform);
+    if (validTypes.contains(selectedType)) {
+      return selectedType;
+    }
+
+    // If not valid, fall back to default for the platform
+    return _getDefaultPackageType(platform);
+  }
+
+  /// Gets list of valid package types for a platform
+  List<String> _getValidPackageTypesForPlatform(String platform) {
+    switch (platform.toLowerCase()) {
+      case 'windows':
+        return ['app-image', 'msi', 'exe'];
+      case 'macos':
+        return ['app-image', 'dmg', 'pkg'];
+      case 'linux':
+        return ['app-image', 'deb', 'rpm'];
+      default:
+        return ['app-image'];
     }
   }
 
@@ -268,9 +302,12 @@ class PackageService {
       jlinkArgs.addAll(['--add-modules', 'ALL-MODULE-PATH']);
     } else if (project.additionalModules.isNotEmpty) {
       jlinkArgs.addAll(['--add-modules', project.additionalModules.join(',')]);
+    } else {
+      // Default modules for non-modular applications
+      jlinkArgs.addAll(['--add-modules', 'java.base,java.desktop']);
     }
 
-    // Add module path
+    // Add module path - if not specified, use Java runtime modules
     if (project.modulePath.isNotEmpty) {
       jlinkArgs.addAll(['--module-path', project.modulePath]);
     }
@@ -279,8 +316,13 @@ class PackageService {
 
     final result = await Process.run(_jlinkCommand, jlinkArgs);
 
+    progress.addLog('JLink stdout: ${result.stdout}');
+    progress.addLog('JLink stderr: ${result.stderr}');
+    progress.addLog('JLink exit code: ${result.exitCode}');
+
     if (result.exitCode != 0) {
-      throw Exception('JLink failed: ${result.stderr}');
+      throw Exception(
+          'JLink failed with exit code ${result.exitCode}: ${result.stderr.toString().isEmpty ? result.stdout : result.stderr}');
     }
 
     progress.addLog('JLink runtime created successfully');
