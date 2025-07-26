@@ -173,6 +173,9 @@ class PackageService {
     PackarooProject project,
     Function(BuildProgress) onProgressUpdate,
   ) async {
+    print(
+        'PackageService.buildPackage: Starting build for project ${project.name}');
+
     final buildProgress = BuildProgress(
       id: 'build_${DateTime.now().millisecondsSinceEpoch}',
       projectId: project.id,
@@ -180,17 +183,25 @@ class PackageService {
     );
 
     try {
+      print(
+          'PackageService.buildPackage: Calling onProgressUpdate with initial progress');
       onProgressUpdate(buildProgress);
       buildProgress.addLog('Starting package build for ${project.name}');
 
       // Validate project
       buildProgress.updateProgress(0.1, 'Validating project');
       onProgressUpdate(buildProgress);
+      print('PackageService.buildPackage: Starting validation');
 
       final validation = await validateProjectForBuild(project);
+      print(
+          'PackageService.buildPackage: Validation result - isValid: ${validation.isValid}, errors: ${validation.errors}');
+
       if (!validation.isValid) {
-        buildProgress
-            .fail('Validation failed: ${validation.errors.join(', ')}');
+        final errorMsg = 'Validation failed: ${validation.errors.join(', ')}';
+        print(
+            'PackageService.buildPackage: Build failed due to validation errors: $errorMsg');
+        buildProgress.fail(errorMsg);
         onProgressUpdate(buildProgress);
         return buildProgress;
       }
@@ -199,6 +210,7 @@ class PackageService {
       if (project.useJlink) {
         buildProgress.updateProgress(0.2, 'Creating JLink runtime');
         onProgressUpdate(buildProgress);
+        print('PackageService.buildPackage: Creating JLink runtime');
 
         await _createJlinkRuntime(project, buildProgress, onProgressUpdate);
       }
@@ -206,14 +218,20 @@ class PackageService {
       // Build with jpackage
       buildProgress.updateProgress(0.6, 'Running jpackage');
       onProgressUpdate(buildProgress);
+      print('PackageService.buildPackage: Starting jpackage');
 
       await _runJpackage(project, buildProgress, onProgressUpdate);
+      print('PackageService.buildPackage: jpackage completed');
 
       // Complete the build
       final outputPath = path.join(project.outputPath, project.appName);
       buildProgress.complete(outputPath);
       onProgressUpdate(buildProgress);
+      print(
+          'PackageService.buildPackage: Build completed successfully, output: $outputPath');
     } catch (e, stackTrace) {
+      print('PackageService.buildPackage: ERROR - $e');
+      print('PackageService.buildPackage: STACK TRACE - $stackTrace');
       buildProgress.fail('Build failed: $e');
       buildProgress.addLog('Stack trace: $stackTrace');
       onProgressUpdate(buildProgress);

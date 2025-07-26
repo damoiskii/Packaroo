@@ -58,12 +58,13 @@ class BuildProgress extends HiveObject {
     this.status = BuildStatus.pending,
     this.progress = 0.0,
     this.currentStep = 'Initializing...',
-    this.logs = const [],
+    List<String>? logs,
     DateTime? startTime,
     this.endTime,
     this.errorMessage,
     this.outputPath = '',
   }) {
+    this.logs = logs ?? <String>[];
     this.startTime = startTime ?? DateTime.now();
   }
 

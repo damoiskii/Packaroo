@@ -203,6 +203,9 @@ class _AppInitializerState extends State<AppInitializer> {
       // Load settings without notifying listeners during build
       await context.read<SettingsProvider>().loadSettings(notify: false);
 
+      // Load build history
+      await context.read<BuildProvider>().loadBuildHistory();
+
       // Initialize window manager
       await windowManager.ensureInitialized();
 

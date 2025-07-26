@@ -36,22 +36,43 @@ class BuildProvider extends ChangeNotifier {
 
   /// Start a new build
   Future<void> startBuild(PackarooProject project) async {
+    print(
+        'BuildProvider.startBuild: Starting build for project ${project.name} (id: ${project.id})');
+
     try {
       // Check if project is already building
       if (_activeBuilds.containsKey(project.id)) {
         _error = 'Project is already building';
         notifyListeners();
+        print('BuildProvider.startBuild: Project already building, aborting');
         return;
       }
 
       _error = null;
+
+      // Create initial build progress and add to active builds
+      final initialProgress = BuildProgress(
+        id: 'build_${project.id}_${DateTime.now().millisecondsSinceEpoch}',
+        projectId: project.id,
+        status: BuildStatus.running,
+        progress: 0.0,
+        currentStep: 'Initializing build...',
+        startTime: DateTime.now(),
+      );
+
+      _activeBuilds[project.id] = initialProgress;
+      print(
+          'BuildProvider.startBuild: Added initial progress to active builds. Active builds count: ${_activeBuilds.length}');
       notifyListeners();
 
       // Start the build process
+      print('BuildProvider.startBuild: Calling PackageService.buildPackage');
       final buildProgress = await _packageService.buildPackage(
         project,
         (progress) => _onBuildProgressUpdate(progress),
       );
+      print(
+          'BuildProvider.startBuild: PackageService.buildPackage completed with status: ${buildProgress.status}');
 
       // Save to history when complete
       await StorageService.saveBuildProgress(buildProgress);
@@ -59,11 +80,14 @@ class BuildProvider extends ChangeNotifier {
 
       // Remove from active builds
       _activeBuilds.remove(project.id);
+      print(
+          'BuildProvider.startBuild: Removed from active builds. Active builds count: ${_activeBuilds.length}');
 
       notifyListeners();
     } catch (e) {
       _error = 'Failed to start build: $e';
       _activeBuilds.remove(project.id);
+      print('BuildProvider.startBuild: ERROR - $e');
       notifyListeners();
     }
   }
@@ -188,6 +212,8 @@ class BuildProvider extends ChangeNotifier {
 
   /// Internal method to handle build progress updates
   void _onBuildProgressUpdate(BuildProgress progress) {
+    print(
+        'BuildProvider._onBuildProgressUpdate: Project ${progress.projectId}, Status: ${progress.status}, Progress: ${progress.progress}, Step: ${progress.currentStep}');
     _activeBuilds[progress.projectId] = progress;
     notifyListeners();
   }

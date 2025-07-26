@@ -8,6 +8,7 @@ import '../widgets/project_details.dart';
 import '../widgets/build_monitor.dart';
 import '../widgets/jar_analyzer_widget.dart';
 import '../widgets/app_icon.dart';
+import '../widgets/build_config_dialog.dart';
 import 'project_edit_screen.dart';
 import 'settings_screen.dart';
 
@@ -184,15 +185,32 @@ class _HomeScreenState extends State<HomeScreen> {
                                         projectProvider.selectedProject!.id,
                                       );
 
-                                      return FilledButton.icon(
-                                        icon: Icon(isBuilding
-                                            ? Symbols.stop
-                                            : Symbols.play_arrow),
-                                        label:
-                                            Text(isBuilding ? 'Stop' : 'Build'),
-                                        onPressed: isBuilding
-                                            ? () => _stopBuild(context)
-                                            : () => _startBuild(context),
+                                      return Row(
+                                        children: [
+                                          // Quick build button
+                                          FilledButton.icon(
+                                            icon: Icon(isBuilding
+                                                ? Symbols.stop
+                                                : Symbols.play_arrow),
+                                            label: Text(isBuilding
+                                                ? 'Stop'
+                                                : 'Quick Build'),
+                                            onPressed: isBuilding
+                                                ? () => _stopBuild(context)
+                                                : () => _quickBuild(context),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          // Configuration button
+                                          OutlinedButton.icon(
+                                            icon: const Icon(Symbols.tune),
+                                            label:
+                                                const Text('Configure & Build'),
+                                            onPressed: isBuilding
+                                                ? null
+                                                : () =>
+                                                    _configureBuild(context),
+                                          ),
+                                        ],
                                       );
                                     },
                                   ),
@@ -380,10 +398,62 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _startBuild(BuildContext context) {
+  void _quickBuild(BuildContext context) {
     final project = context.read<ProjectProvider>().selectedProject;
     if (project != null) {
-      context.read<BuildProvider>().startBuild(project);
+      // Start build immediately with current project settings
+      final buildProvider = context.read<BuildProvider>();
+      buildProvider.startBuild(project);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Quick build started for ${project.name}'),
+          action: SnackBarAction(
+            label: 'View Progress',
+            onPressed: () {
+              setState(() {
+                _selectedIndex = 2; // Switch to Build Monitor tab
+              });
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  void _configureBuild(BuildContext context) {
+    final project = context.read<ProjectProvider>().selectedProject;
+    if (project != null) {
+      _showBuildDialog(context, project);
+    }
+  }
+
+  Future<void> _showBuildDialog(BuildContext context, dynamic project) async {
+    final result = await showDialog<dynamic>(
+      context: context,
+      builder: (context) => BuildConfigDialog(project: project),
+    );
+
+    if (result != null && mounted) {
+      // Start build with the configured project
+      final buildProvider = context.read<BuildProvider>();
+      await buildProvider.startBuild(result);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Build started for ${result.name}'),
+            action: SnackBarAction(
+              label: 'View Progress',
+              onPressed: () {
+                setState(() {
+                  _selectedIndex = 2; // Switch to Build Monitor tab
+                });
+              },
+            ),
+          ),
+        );
+      }
     }
   }
 
