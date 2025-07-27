@@ -132,7 +132,7 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.folder_open, color: Colors.white),
+                          : const Icon(Icons.folder_open),
                       label: Text(
                           _isAnalyzing ? 'Analyzing...' : 'Select JAR File'),
                       style: ElevatedButton.styleFrom(
