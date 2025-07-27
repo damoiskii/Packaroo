@@ -6,6 +6,7 @@ import 'providers/build_provider.dart';
 import 'providers/settings_provider.dart';
 import 'services/storage_service.dart';
 import 'screens/home_screen.dart';
+import 'widgets/animated_startup_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -70,20 +71,41 @@ class PackarooApp extends StatelessWidget {
   }
 
   ThemeData _createLightTheme() {
+    // Custom color scheme using the provided colors
+    const primaryColor = Color(0xFF1A6DFF); // Blue primary
+    const secondaryColor = Color(0xFF6DC7FF); // Light blue
+    const tertiaryColor = Color(0xFFE6ABFF); // Light purple
+    const accentColor = Color(0xFFC822FF); // Purple accent
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF2196F3),
+        seedColor: primaryColor,
         brightness: Brightness.light,
+        primary: primaryColor,
+        secondary: secondaryColor,
+        tertiary: tertiaryColor,
+        primaryContainer: secondaryColor.withOpacity(0.3),
+        secondaryContainer: tertiaryColor.withOpacity(0.3),
+        tertiaryContainer: accentColor.withOpacity(0.2),
+        surface: Colors.white,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+        onSurface: Colors.black87,
       ),
       appBarTheme: const AppBarTheme(
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 1,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
       ),
-      cardTheme: const CardTheme(
+      cardTheme: CardTheme(
         elevation: 2,
-        margin: EdgeInsets.all(8),
+        margin: const EdgeInsets.all(8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -92,6 +114,9 @@ class PackarooApp extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          iconColor: Colors.white,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -100,6 +125,9 @@ class PackarooApp extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          iconColor: Colors.white,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -108,36 +136,67 @@ class PackarooApp extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
+          side: BorderSide(color: primaryColor),
+          foregroundColor: primaryColor,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: secondaryColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: primaryColor, width: 2),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
-      navigationDrawerTheme: const NavigationDrawerThemeData(
-        indicatorColor: Colors.blue,
+      navigationDrawerTheme: NavigationDrawerThemeData(
+        indicatorColor: secondaryColor.withOpacity(0.3),
+      ),
+      iconTheme: const IconThemeData(
+        color: Colors.black87,
       ),
     );
   }
 
   ThemeData _createDarkTheme() {
+    // Custom color scheme using the provided colors for dark theme
+    const primaryColor = Color(0xFF6DC7FF); // Light blue primary for dark
+    const secondaryColor = Color(0xFF1A6DFF); // Blue secondary
+    const tertiaryColor = Color(0xFFE6ABFF); // Light purple
+    const accentColor = Color(0xFFC822FF); // Purple accent
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF2196F3),
+        seedColor: primaryColor,
         brightness: Brightness.dark,
+        primary: primaryColor,
+        secondary: secondaryColor,
+        tertiary: tertiaryColor,
+        primaryContainer: secondaryColor.withOpacity(0.3),
+        secondaryContainer: accentColor.withOpacity(0.3),
+        surface: const Color(0xFF121212),
+        onPrimary: Colors.black,
+        onSecondary: Colors.white,
+        onSurface: Colors.white,
       ),
       appBarTheme: const AppBarTheme(
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 1,
+        backgroundColor: Color(0xFF121212),
+        foregroundColor: Colors.white,
       ),
-      cardTheme: const CardTheme(
+      cardTheme: CardTheme(
         elevation: 2,
-        margin: EdgeInsets.all(8),
+        margin: const EdgeInsets.all(8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        color: const Color(0xFF1E1E1E),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -146,6 +205,9 @@ class PackarooApp extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.black,
+          iconColor: Colors.black,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -154,6 +216,9 @@ class PackarooApp extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.black,
+          iconColor: Colors.black,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -162,17 +227,27 @@ class PackarooApp extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
+          side: BorderSide(color: primaryColor),
+          foregroundColor: primaryColor,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: tertiaryColor.withOpacity(0.5)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: primaryColor, width: 2),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
-      navigationDrawerTheme: const NavigationDrawerThemeData(
-        indicatorColor: Colors.blue,
+      navigationDrawerTheme: NavigationDrawerThemeData(
+        indicatorColor: primaryColor.withOpacity(0.3),
+      ),
+      iconTheme: const IconThemeData(
+        color: Colors.white,
       ),
     );
   }
@@ -192,7 +267,7 @@ class _AppInitializerState extends State<AppInitializer> {
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    // Don't auto-initialize, let the animated screen handle it
   }
 
   Future<void> _initializeApp() async {
@@ -240,20 +315,10 @@ class _AppInitializerState extends State<AppInitializer> {
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 24),
-              Text(
-                'Initializing Packaroo...',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
-          ),
-        ),
+      return AnimatedStartupScreen(
+        onInitializationComplete: () {
+          _initializeApp();
+        },
       );
     }
 
