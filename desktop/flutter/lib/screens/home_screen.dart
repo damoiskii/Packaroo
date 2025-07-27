@@ -484,7 +484,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildNavItem(int index, IconData icon, String label) {
     final isSelected = _selectedIndex == index;
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      margin: EdgeInsets.symmetric(
+        horizontal: _isDrawerOpen ? 8 : 4,
+        vertical: 2,
+      ),
       child: Material(
         color: isSelected
             ? Theme.of(context).colorScheme.primaryContainer
@@ -498,33 +501,50 @@ class _HomeScreenState extends State<HomeScreen> {
             });
           },
           child: Container(
-            height: 56,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.onPrimaryContainer
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                if (_isDrawerOpen) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: TextStyle(
+            height: 40,
+            padding: EdgeInsets.symmetric(
+              horizontal: _isDrawerOpen ? 12 : 0,
+            ),
+            child: _isDrawerOpen
+                ? Row(
+                    children: [
+                      Icon(
+                        icon,
                         color: isSelected
                             ? Theme.of(context).colorScheme.onPrimaryContainer
                             : Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            color: isSelected
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Center(
+                    child: Tooltip(
+                      message: label,
+                      child: Icon(
+                        icon,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.onPrimaryContainer
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
-                ],
-              ],
-            ),
           ),
         ),
       ),
