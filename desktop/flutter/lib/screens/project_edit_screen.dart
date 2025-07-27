@@ -118,146 +118,62 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // JAR Selection Button at the top
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: _isAnalyzing ? null : _pickAndAnalyzeJar,
-                      icon: _isAnalyzing
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.folder_open),
-                      label: Text(
-                          _isAnalyzing ? 'Analyzing...' : 'Select JAR File'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor:
-                            Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // JAR File Path Display (full width)
-              if (_jarPathController.text.isNotEmpty ||
-                  _jarPathController.text.isEmpty)
-                Column(
+              // Left column
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'JAR File Path *',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                      'Project Information',
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: _jarPathController.text.isEmpty
-                              ? Theme.of(context).colorScheme.error
-                              : Theme.of(context).colorScheme.outline,
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                        color: Theme.of(context).colorScheme.surface,
-                      ),
-                      child: Text(
-                        _jarPathController.text.isEmpty
-                            ? 'No JAR file selected'
-                            : _jarPathController.text,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: _jarPathController.text.isEmpty
-                                  ? Theme.of(context).colorScheme.error
-                                  : Theme.of(context).colorScheme.onSurface,
-                            ),
-                      ),
+                    const SizedBox(height: 24),
+                    _buildTextField(
+                      controller: _nameController,
+                      label: 'Project Name',
+                      hint: 'Enter project name',
+                      isRequired: true,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Project name is required';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        // Auto-update app name when project name changes
+                        if (_appNameController.text.isEmpty ||
+                            _appNameController.text ==
+                                StringUtils.toTitleCase(_nameController.text)) {
+                          _appNameController.text =
+                              StringUtils.toTitleCase(value);
+                        }
+                      },
                     ),
-                    if (_jarPathController.text.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          'JAR file is required',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
-                        ),
-                      ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _descriptionController,
+                      label: 'Description',
+                      hint: 'Enter project description (optional)',
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildJarFilePickerField(),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _mainClassController,
+                      label: 'Main Class',
+                      hint: 'e.g., com.example.MainClass',
+                      isRequired: true,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Main class is required';
+                        }
+                        return null;
+                      },
+                    ),
                   ],
                 ),
-              const SizedBox(height: 24),
-
-              // Two column layout for the rest
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Left column
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Project Information',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          const SizedBox(height: 24),
-                          _buildTextField(
-                            controller: _nameController,
-                            label: 'Project Name',
-                            hint: 'Enter project name',
-                            isRequired: true,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Project name is required';
-                              }
-                              return null;
-                            },
-                            onChanged: (value) {
-                              // Auto-update app name when project name changes
-                              if (_appNameController.text.isEmpty ||
-                                  _appNameController.text ==
-                                      StringUtils.toTitleCase(
-                                          _nameController.text)) {
-                                _appNameController.text =
-                                    StringUtils.toTitleCase(value);
-                              }
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            controller: _descriptionController,
-                            label: 'Description',
-                            hint: 'Enter project description (optional)',
-                            maxLines: 3,
-                          ),
-                          const SizedBox(height: 16),
-                          _buildTextField(
-                            controller: _mainClassController,
-                            label: 'Main Class',
-                            hint: 'e.g., com.example.MainClass',
-                            isRequired: true,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Main class is required';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+              ),
 
                     const SizedBox(width: 32),
 
