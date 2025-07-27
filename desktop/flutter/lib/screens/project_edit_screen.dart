@@ -99,7 +99,7 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
       appBar: AppBar(
         title: Text(widget.project == null ? 'New Project' : 'Edit Project'),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => _handleCancel(),
             child: const Text('Cancel'),
           ),
