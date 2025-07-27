@@ -115,132 +115,219 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
         key: _formKey,
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left column
-              Expanded(
-                child: Column(
+              // JAR Selection Button at the top
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: _isAnalyzing ? null : _pickAndAnalyzeJar,
+                      icon: _isAnalyzing
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.folder_open, color: Colors.white),
+                      label: Text(
+                          _isAnalyzing ? 'Analyzing...' : 'Select JAR File'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // JAR File Path Display (full width)
+              if (_jarPathController.text.isNotEmpty ||
+                  _jarPathController.text.isEmpty)
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Project Information',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                      'JAR File Path *',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                     ),
-                    const SizedBox(height: 24),
-                    _buildTextField(
-                      controller: _nameController,
-                      label: 'Project Name',
-                      hint: 'Enter project name',
-                      isRequired: true,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Project name is required';
-                        }
-                        return null;
-                      },
-                      onChanged: (value) {
-                        // Auto-update app name when project name changes
-                        if (_appNameController.text.isEmpty ||
-                            _appNameController.text ==
-                                StringUtils.toTitleCase(_nameController.text)) {
-                          _appNameController.text =
-                              StringUtils.toTitleCase(value);
-                        }
-                      },
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: _jarPathController.text.isEmpty
+                              ? Theme.of(context).colorScheme.error
+                              : Theme.of(context).colorScheme.outline,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                        color: Theme.of(context).colorScheme.surface,
+                      ),
+                      child: Text(
+                        _jarPathController.text.isEmpty
+                            ? 'No JAR file selected'
+                            : _jarPathController.text,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: _jarPathController.text.isEmpty
+                                  ? Theme.of(context).colorScheme.error
+                                  : Theme.of(context).colorScheme.onSurface,
+                            ),
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _descriptionController,
-                      label: 'Description',
-                      hint: 'Enter project description (optional)',
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildJarFilePickerField(),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _mainClassController,
-                      label: 'Main Class',
-                      hint: 'e.g., com.example.MainClass',
-                      isRequired: true,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Main class is required';
-                        }
-                        return null;
-                      },
-                    ),
+                    if (_jarPathController.text.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'JAR file is required',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                        ),
+                      ),
                   ],
                 ),
-              ),
+              const SizedBox(height: 24),
 
-              const SizedBox(width: 32),
-
-              // Right column
+              // Two column layout for the rest
               Expanded(
-                child: Column(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Application Details',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    // Left column
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Project Information',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 24),
+                          _buildTextField(
+                            controller: _nameController,
+                            label: 'Project Name',
+                            hint: 'Enter project name',
+                            isRequired: true,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Project name is required';
+                              }
+                              return null;
+                            },
+                            onChanged: (value) {
+                              // Auto-update app name when project name changes
+                              if (_appNameController.text.isEmpty ||
+                                  _appNameController.text ==
+                                      StringUtils.toTitleCase(
+                                          _nameController.text)) {
+                                _appNameController.text =
+                                    StringUtils.toTitleCase(value);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            controller: _descriptionController,
+                            label: 'Description',
+                            hint: 'Enter project description (optional)',
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            controller: _mainClassController,
+                            label: 'Main Class',
+                            hint: 'e.g., com.example.MainClass',
+                            isRequired: true,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Main class is required';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 24),
-                    _buildTextField(
-                      controller: _appNameController,
-                      label: 'Application Name',
-                      hint: 'Display name for the application',
-                      isRequired: true,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Application name is required';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _appVersionController,
-                      label: 'Version',
-                      hint: 'e.g., 1.0.0',
-                      isRequired: true,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Version is required';
-                        }
-                        if (!StringUtils.isValidVersion(value.trim())) {
-                          return 'Invalid version format (e.g., 1.0.0)';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _appVendorController,
-                      label: 'Vendor',
-                      hint: 'Organization or developer name',
-                    ),
-                    const SizedBox(height: 16),
-                    _buildFilePickerField(
-                      controller: _outputPathController,
-                      label: 'Output Directory',
-                      hint: 'Select output directory',
-                      isRequired: true,
-                      fileType: 'directory',
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Output directory is required';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildFilePickerField(
-                      controller: _jdkPathController,
-                      label: 'JDK Path (Optional)',
-                      hint: 'Select JDK installation directory',
-                      fileType: 'directory',
+
+                    const SizedBox(width: 32),
+
+                    // Right column
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Application Details',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 24),
+                          _buildTextField(
+                            controller: _appNameController,
+                            label: 'Application Name',
+                            hint: 'Display name for the application',
+                            isRequired: true,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Application name is required';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            controller: _appVersionController,
+                            label: 'Version',
+                            hint: 'e.g., 1.0.0',
+                            isRequired: true,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Version is required';
+                              }
+                              if (!StringUtils.isValidVersion(value.trim())) {
+                                return 'Invalid version format (e.g., 1.0.0)';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            controller: _appVendorController,
+                            label: 'Vendor',
+                            hint: 'Organization or developer name',
+                          ),
+                          const SizedBox(height: 16),
+                          _buildFilePickerField(
+                            controller: _outputPathController,
+                            label: 'Output Directory',
+                            hint: 'Select output directory',
+                            isRequired: true,
+                            fileType: 'directory',
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Output directory is required';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _buildFilePickerField(
+                            controller: _jdkPathController,
+                            label: 'JDK Path (Optional)',
+                            hint: 'Select JDK installation directory',
+                            fileType: 'directory',
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -335,47 +422,6 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
     }
   }
 
-  Widget _buildJarFilePickerField() {
-    return TextFormField(
-      controller: _jarPathController,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'JAR file is required';
-        }
-        return null;
-      },
-      decoration: InputDecoration(
-        labelText: 'JAR File Path *',
-        hintText: 'Select JAR file to analyze',
-        border: const OutlineInputBorder(),
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surface,
-        suffixIcon: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_isAnalyzing) ...[
-              const Padding(
-                padding: EdgeInsets.all(12.0),
-                child: SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            ] else ...[
-              IconButton(
-                icon: const Icon(Icons.folder_open),
-                onPressed: _pickAndAnalyzeJar,
-                tooltip: 'Select and analyze JAR file',
-              ),
-            ],
-          ],
-        ),
-      ),
-      readOnly: true,
-    );
-  }
-
   Future<void> _pickAndAnalyzeJar() async {
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -435,8 +481,10 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
           _appVersionController.text = analysisResult.suggestedVersion;
         }
 
-        if (_appVendorController.text.isEmpty) {
-          _appVendorController.text = analysisResult.suggestedVendor;
+        // Always update vendor field from JAR metadata if available
+        final jarVendor = analysisResult.suggestedVendor;
+        if (jarVendor.isNotEmpty) {
+          _appVendorController.text = jarVendor;
         }
 
         // Set default output path if empty
@@ -514,6 +562,17 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
   }
 
   void _handleSave() {
+    // Custom validation for JAR path since we removed the TextFormField
+    if (_jarPathController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select a JAR file'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       final projectProvider = context.read<ProjectProvider>();
 
