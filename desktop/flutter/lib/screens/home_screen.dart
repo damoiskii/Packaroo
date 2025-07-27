@@ -28,86 +28,91 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Row(
         children: [
-          // Custom Navigation Rail with full-width highlighting
-          Container(
-            width: _isDrawerOpen ? 200 : 56,
-            color: Theme.of(context).colorScheme.surface,
-            child: Column(
+          // Navigation Rail
+          NavigationRail(
+            extended: _isDrawerOpen,
+            minWidth: 56,
+            minExtendedWidth: 200,
+            destinations: const [
+              NavigationRailDestination(
+                icon: Icon(Symbols.folder),
+                selectedIcon: Icon(Symbols.folder),
+                label: Text('Projects'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Symbols.analytics),
+                selectedIcon: Icon(Symbols.analytics),
+                label: Text('JAR Analyzer'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Symbols.build),
+                selectedIcon: Icon(Symbols.build),
+                label: Text('Builds'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Symbols.settings),
+                selectedIcon: Icon(Symbols.settings),
+                label: Text('Settings'),
+              ),
+            ],
+            selectedIndex: _selectedIndex,
+            onDestinationSelected: (index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+            },
+            leading: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header section with menu toggle, app icon, and name
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Menu toggle button at extreme left
-                      Container(
-                        alignment: _isDrawerOpen
-                            ? Alignment.centerLeft
-                            : Alignment.center,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          tooltip: _isDrawerOpen ? 'Close Menu' : 'Open Menu',
-                          icon: Icon(
-                              _isDrawerOpen ? Symbols.menu_open : Symbols.menu),
-                          onPressed: () {
-                            setState(() {
-                              _isDrawerOpen = !_isDrawerOpen;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // App icon and name at extreme left
-                      if (_isDrawerOpen) ...[
-                        Container(
-                          alignment: Alignment.centerLeft,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const AppIcon(size: 32, showTooltip: true),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Packaroo',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineSmall
-                                    ?.copyWith(
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                // Menu toggle button at extreme left
+                Container(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    icon:
+                        Icon(_isDrawerOpen ? Symbols.menu_open : Symbols.menu),
+                    onPressed: () {
+                      setState(() {
+                        _isDrawerOpen = !_isDrawerOpen;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // App icon and name at extreme left
+                if (_isDrawerOpen) ...[
+                  Container(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const AppIcon(size: 32, showTooltip: true),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Packaroo',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
                               ),
-                            ],
-                          ),
                         ),
-                        const SizedBox(height: 16),
-                      ] else ...[
-                        Container(
-                          alignment: Alignment.center,
-                          child: const AppIcon(size: 32, showTooltip: true),
-                        ),
-                        const SizedBox(height: 16),
                       ],
-                    ],
+                    ),
                   ),
-                ),
-
-                // Custom navigation items with full-width highlighting
-                Expanded(
-                  child: ListView(
-                    children: [
-                      _buildNavItem(0, Symbols.folder, 'Projects'),
-                      _buildNavItem(1, Symbols.analytics, 'JAR Analyzer'),
-                      _buildNavItem(2, Symbols.build, 'Builds'),
-                      _buildNavItem(3, Symbols.settings, 'Settings'),
-                    ],
+                  const SizedBox(height: 16),
+                ] else ...[
+                  Container(
+                    alignment: Alignment.centerLeft,
+                    child: const AppIcon(size: 32, showTooltip: true),
                   ),
-                ),
-
-                // Trailing section with active builds indicator
-                if (_isDrawerOpen)
-                  Padding(
+                  const SizedBox(height: 16),
+                ],
+              ],
+            ),
+            trailing: _isDrawerOpen
+                ? Padding(
                     padding: const EdgeInsets.all(16),
                     child: Consumer<BuildProvider>(
                       builder: (context, buildProvider, child) {
@@ -141,9 +146,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         return const SizedBox();
                       },
                     ),
-                  ),
-              ],
-            ),
+                  )
+                : null,
           ),
 
           // Main Content Area
@@ -479,75 +483,5 @@ class _HomeScreenState extends State<HomeScreen> {
     if (project != null) {
       context.read<BuildProvider>().cancelBuild(project.id);
     }
-  }
-
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    final isSelected = _selectedIndex == index;
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: _isDrawerOpen ? 8 : 4,
-        vertical: 2,
-      ),
-      child: Material(
-        color: isSelected
-            ? Theme.of(context).colorScheme.primaryContainer
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: () {
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-          child: Container(
-            height: 40,
-            padding: EdgeInsets.symmetric(
-              horizontal: _isDrawerOpen ? 12 : 0,
-            ),
-            child: _isDrawerOpen
-                ? Row(
-                    children: [
-                      Icon(
-                        icon,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.onPrimaryContainer
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            color: isSelected
-                                ? Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                : Center(
-                    child: Tooltip(
-                      message: label,
-                      child: Icon(
-                        icon,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.onPrimaryContainer
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-          ),
-        ),
-      ),
-    );
   }
 }

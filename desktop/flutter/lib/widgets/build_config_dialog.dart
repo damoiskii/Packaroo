@@ -167,7 +167,7 @@ class _BuildConfigDialogState extends State<BuildConfigDialog> {
         ),
       ),
       actions: [
-        OutlinedButton(
+        TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
