@@ -118,55 +118,38 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left column
-              Expanded(
+              // JAR File Selection at the top
+              Center(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Project Information',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    SizedBox(
+                      width: 300,
+                      child: ElevatedButton.icon(
+                        onPressed: _pickAndAnalyzeJar,
+                        icon: _isAnalyzing
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              )
+                            : const Icon(Icons.upload_file),
+                        label: Text(
+                            _isAnalyzing ? 'Analyzing...' : 'Select JAR File'),
+                      ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     _buildTextField(
-                      controller: _nameController,
-                      label: 'Project Name',
-                      hint: 'Enter project name',
+                      controller: _jarPathController,
+                      label: 'JAR Path',
+                      hint: 'Path to the JAR file',
                       isRequired: true,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Project name is required';
-                        }
-                        return null;
-                      },
-                      onChanged: (value) {
-                        // Auto-update app name when project name changes
-                        if (_appNameController.text.isEmpty ||
-                            _appNameController.text ==
-                                StringUtils.toTitleCase(_nameController.text)) {
-                          _appNameController.text =
-                              StringUtils.toTitleCase(value);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _descriptionController,
-                      label: 'Description',
-                      hint: 'Enter project description (optional)',
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildJarFilePickerField(),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _mainClassController,
-                      label: 'Main Class',
-                      hint: 'e.g., com.example.MainClass',
-                      isRequired: true,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Main class is required';
+                          return 'JAR file is required';
                         }
                         return null;
                       },
@@ -174,9 +157,68 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
                   ],
                 ),
               ),
-
+              const SizedBox(height: 32),
+              // Two-column layout
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Left column
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Project Information',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 24),
+                          _buildTextField(
+                            controller: _nameController,
+                            label: 'Project Name',
+                            hint: 'Enter project name',
+                            isRequired: true,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Project name is required';
+                              }
+                              return null;
+                            },
+                            onChanged: (value) {
+                              // Auto-update app name when project name changes
+                              if (_appNameController.text.isEmpty ||
+                                  _appNameController.text ==
+                                      StringUtils.toTitleCase(
+                                          _nameController.text)) {
+                                _appNameController.text =
+                                    StringUtils.toTitleCase(value);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            controller: _descriptionController,
+                            label: 'Description',
+                            hint: 'Enter project description (optional)',
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            controller: _mainClassController,
+                            label: 'Main Class',
+                            hint: 'e.g., com.example.MainClass',
+                            isRequired: true,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Main class is required';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(width: 32),
-
                     // Right column
                     Expanded(
                       child: Column(
