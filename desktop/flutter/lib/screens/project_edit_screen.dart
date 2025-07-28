@@ -127,13 +127,17 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
                       child: ElevatedButton.icon(
                         onPressed: _pickAndAnalyzeJar,
                         icon: _isAnalyzing
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 16,
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
+                                    Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.black
+                                        : Colors.white,
+                                  ),
                                 ),
                               )
                             : const Icon(Icons.upload_file),
