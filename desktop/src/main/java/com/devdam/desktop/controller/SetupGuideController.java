@@ -7,7 +7,6 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
-import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -110,10 +109,17 @@ public class SetupGuideController implements Initializable {
     }
 
     private void initializeSetupWebView() {
-        if (setupWebView != null) {
-            WebEngine webEngine = setupWebView.getEngine();
-            String htmlContent = buildSetupContentAsHTML();
-            webEngine.loadContent(htmlContent);
+        try {
+            if (setupWebView != null) {
+                WebEngine webEngine = setupWebView.getEngine();
+                String htmlContent = buildSetupContentAsHTML();
+                webEngine.loadContent(htmlContent);
+            }
+        } catch (NoClassDefFoundError e) {
+            log.warn("WebView not available (javafx.web module not found). Setup guide will be limited.", e);
+            // WebView functionality is not available - could show alternative content
+        } catch (Exception e) {
+            log.error("Error initializing WebView", e);
         }
     }
 
@@ -255,13 +261,5 @@ public class SetupGuideController implements Initializable {
         about.setResizable(true);
         about.getDialogPane().setPrefWidth(400);
         about.showAndWait();
-    }
-
-    private void showAlert(Alert.AlertType type, String title, String message) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
     }
 }
