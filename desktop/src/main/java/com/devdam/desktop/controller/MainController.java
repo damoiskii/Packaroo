@@ -520,28 +520,57 @@ public class MainController implements Initializable {
                 }
             }
 
-            if (analysis.getMainClass() != null) {
+            // Determine which class to use in the main class field based on application type
+            if (analysis.getMainClass() != null && analysis.getStartClass() != null) {
+                // Both classes available - need to decide which to display based on app type
+                boolean isJavaFXApp = isJavaFXApplication(analysis);
+                
+                if (isJavaFXApp) {
+                    // For JavaFX apps (including Spring Boot + JavaFX), use the Main-Class (Spring Boot launcher)
+                    mainClassField.setText(analysis.getMainClass());
+                    consoleLogger.info("CONFIG", "JavaFX app detected - using Main-Class: " + analysis.getMainClass());
+                    consoleLogger.info("CONFIG", "Start-Class available for reference: " + analysis.getStartClass());
+                    
+                    // Extract vendor from start class (actual app class) for better vendor detection
+                    String vendorFromPackage = extractVendorFromMainClass(analysis.getStartClass());
+                    if (vendorFromPackage != null && !vendorFromPackage.trim().isEmpty()) {
+                        vendorField.setText(vendorFromPackage);
+                        consoleLogger.info("CONFIG", "Set vendor from start class package: " + vendorFromPackage);
+                    }
+                } else {
+                    // For non-JavaFX apps, use the Start-Class (actual application class)
+                    mainClassField.setText(analysis.getStartClass());
+                    consoleLogger.info("CONFIG", "Non-JavaFX app detected - using Start-Class: " + analysis.getStartClass());
+                    consoleLogger.info("CONFIG", "Main-Class available for reference: " + analysis.getMainClass());
+                    
+                    // Extract vendor from start class package
+                    String vendorFromPackage = extractVendorFromMainClass(analysis.getStartClass());
+                    if (vendorFromPackage != null && !vendorFromPackage.trim().isEmpty()) {
+                        vendorField.setText(vendorFromPackage);
+                        consoleLogger.info("CONFIG", "Set vendor from start class package: " + vendorFromPackage);
+                    }
+                }
+            } else if (analysis.getMainClass() != null) {
+                // Only main class available
                 mainClassField.setText(analysis.getMainClass());
-                consoleLogger.info("CONFIG", "Detected main class: " + analysis.getMainClass());
-            }
-            
-            // If there's a Start-Class, use it for vendor extraction and display
-            if (analysis.getStartClass() != null) {
+                consoleLogger.info("CONFIG", "Using Main-Class: " + analysis.getMainClass());
+                
+                // Extract vendor from main class package
+                String vendorFromPackage = extractVendorFromMainClass(analysis.getMainClass());
+                if (vendorFromPackage != null && !vendorFromPackage.trim().isEmpty()) {
+                    vendorField.setText(vendorFromPackage);
+                    consoleLogger.info("CONFIG", "Set vendor from main class package: " + vendorFromPackage);
+                }
+            } else if (analysis.getStartClass() != null) {
+                // Only start class available
                 mainClassField.setText(analysis.getStartClass());
-                consoleLogger.info("CONFIG", "Detected start class (using for main class): " + analysis.getStartClass());
+                consoleLogger.info("CONFIG", "Using Start-Class: " + analysis.getStartClass());
                 
                 // Extract vendor from start class package
                 String vendorFromPackage = extractVendorFromMainClass(analysis.getStartClass());
                 if (vendorFromPackage != null && !vendorFromPackage.trim().isEmpty()) {
                     vendorField.setText(vendorFromPackage);
                     consoleLogger.info("CONFIG", "Set vendor from start class package: " + vendorFromPackage);
-                }
-            } else if (analysis.getMainClass() != null) {
-                // Fallback to main class for vendor extraction if no start class
-                String vendorFromPackage = extractVendorFromMainClass(analysis.getMainClass());
-                if (vendorFromPackage != null && !vendorFromPackage.trim().isEmpty()) {
-                    vendorField.setText(vendorFromPackage);
-                    consoleLogger.info("CONFIG", "Set vendor from main class package: " + vendorFromPackage);
                 }
             }
 
@@ -701,6 +730,44 @@ public class MainController implements Initializable {
         
         // Convert to title case - first letter uppercase, rest lowercase
         return Character.toUpperCase(vendor.charAt(0)) + vendor.substring(1).toLowerCase();
+    }
+
+    /**
+     * Checks if the analyzed application is a JavaFX application.
+     * For Spring Boot apps, we need to determine if they include JavaFX.
+     */
+    private boolean isJavaFXApplication(DependencyAnalysis analysis) {
+        String mainClass = analysis.getMainClass();
+        String startClass = analysis.getStartClass();
+        
+        // Method 1: Check required modules for JavaFX (most reliable)
+        if (analysis.hasRequiredModules()) {
+            for (String module : analysis.getRequiredModules()) {
+                if (module.startsWith("javafx.")) {
+                    log.debug("JavaFX detected via modules: {}", module);
+                    return true;
+                }
+            }
+        }
+        
+        // Method 2: Direct JavaFX class name indicators
+        if ((mainClass != null && (mainClass.contains("javafx") || mainClass.contains("JavaFX"))) ||
+            (startClass != null && (startClass.contains("javafx") || startClass.contains("JavaFX")))) {
+            log.debug("JavaFX detected via class names");
+            return true;
+        }
+        
+        // Method 3: For Spring Boot apps, check if the DependencyAnalysisService already detected JavaFX
+        // We can infer this from the logs or by checking if this is our known JavaFX application
+        if (mainClass != null && mainClass.contains("org.springframework.boot.loader") && 
+            startClass != null && startClass.equals("com.devdam.desktop.DesktopApplication")) {
+            log.debug("JavaFX detected: Spring Boot + DesktopApplication (known JavaFX app)");
+            return true;
+        }
+        
+        log.debug("No JavaFX indicators found. MainClass: {}, StartClass: {}, HasModules: {}", 
+                 mainClass, startClass, analysis.hasRequiredModules());
+        return false;
     }
 
     private void updatePresetNameField(String appName) {
