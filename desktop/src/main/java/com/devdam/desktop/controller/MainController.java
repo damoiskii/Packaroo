@@ -757,12 +757,31 @@ public class MainController implements Initializable {
             return true;
         }
         
-        // Method 3: For Spring Boot apps, check if the DependencyAnalysisService already detected JavaFX
-        // We can infer this from the logs or by checking if this is our known JavaFX application
+        // Method 3: For Spring Boot apps, use enhanced detection strategies
+        // If we have a Spring Boot launcher, check for JavaFX indicators more intelligently
         if (mainClass != null && mainClass.contains("org.springframework.boot.loader") && 
-            startClass != null && startClass.equals("com.devdam.desktop.DesktopApplication")) {
-            log.debug("JavaFX detected: Spring Boot + DesktopApplication (known JavaFX app)");
-            return true;
+            startClass != null && !startClass.trim().isEmpty()) {
+            
+            try {
+                // Check if the service detected JavaFX modules (most reliable indicator)
+                boolean hasJavaFXModules = analysis.hasRequiredModules() && 
+                    analysis.getRequiredModules().stream().anyMatch(module -> module.startsWith("javafx."));
+                
+                if (hasJavaFXModules) {
+                    log.debug("JavaFX detected: Spring Boot + JavaFX modules found");
+                    return true;
+                }
+                
+                // Additional heuristic: Check if the start class is likely a JavaFX Application class
+                // JavaFX Application classes often extend javafx.application.Application or have "App" in the name
+                if (startClass.toLowerCase().contains("app") || startClass.toLowerCase().contains("application")) {
+                    log.debug("JavaFX detected: Spring Boot + Application-like start class: {}", startClass);
+                    return true;
+                }
+                
+            } catch (Exception e) {
+                log.debug("Could not determine JavaFX status for Spring Boot app", e);
+            }
         }
         
         log.debug("No JavaFX indicators found. MainClass: {}, StartClass: {}, HasModules: {}", 
