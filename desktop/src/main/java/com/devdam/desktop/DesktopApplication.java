@@ -63,7 +63,13 @@ public class DesktopApplication extends Application {
 
     private Stage showSplashScreen() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/splash.fxml"));
+            // Use URL for better resource access in packaged apps
+            var fxmlUrl = getClass().getResource("/fxml/splash.fxml");
+            if (fxmlUrl == null) {
+                throw new RuntimeException("Could not find splash.fxml resource");
+            }
+            
+            FXMLLoader loader = new FXMLLoader(fxmlUrl);
             loader.setControllerFactory(context::getBean);
             Parent splashRoot = loader.load();
             
@@ -72,7 +78,15 @@ public class DesktopApplication extends Application {
             
             // Create scene with proper styling
             Scene splashScene = new Scene(splashRoot, 600, 400);
-            splashScene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
+            
+            // Fix CSS loading for packaged apps
+            var cssUrl = getClass().getResource("/css/styles.css");
+            if (cssUrl != null) {
+                splashScene.getStylesheets().add(cssUrl.toExternalForm());
+            } else {
+                log.warn("Could not load styles.css resource");
+            }
+            
             splashStage.setScene(splashScene);
             
             // Try to load icon, but don't fail if it's missing
@@ -103,12 +117,24 @@ public class DesktopApplication extends Application {
         ViewManager viewManager = context.getBean(ViewManager.class);
         viewManager.setPrimaryStage(primaryStage);
         
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
+        var fxmlUrl = getClass().getResource("/fxml/main.fxml");
+        if (fxmlUrl == null) {
+            throw new RuntimeException("Could not find main.fxml resource");
+        }
+        
+        FXMLLoader loader = new FXMLLoader(fxmlUrl);
         loader.setControllerFactory(context::getBean);
         Parent root = loader.load();
 
         Scene scene = new Scene(root, 1200, 800);
-        scene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
+        
+        // Fix CSS loading for packaged apps
+        var cssUrl = getClass().getResource("/css/styles.css");
+        if (cssUrl != null) {
+            scene.getStylesheets().add(cssUrl.toExternalForm());
+        } else {
+            log.warn("Could not load styles.css resource");
+        }
 
         primaryStage.setTitle("Packaroo - Java Application Packager");
         primaryStage.setScene(scene);
