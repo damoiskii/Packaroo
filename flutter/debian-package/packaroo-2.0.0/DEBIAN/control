@@ -1,0 +1,12 @@
+Package: packaroo
+Version: 2.0.0
+Section: devel
+Priority: optional
+Architecture: amd64
+Depends: libc6, libgtk-3-0, libglib2.0-0
+Maintainer: Damoiskii <moimyazz@gmail.com>
+Description: A modern Java application packaging tool
+ Packaroo is a modern Flutter desktop application for packaging Java
+ applications with jpackage and jlink. It provides an intuitive GUI
+ for creating distributable Java application packages.
+Homepage: https://github.com/damoiskii/Packaroo
