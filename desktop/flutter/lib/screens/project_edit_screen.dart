@@ -548,6 +548,7 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
         mainClass: _mainClassController.text.trim(),
         appName: _appNameController.text.trim(),
         appVersion: _appVersionController.text.trim(),
+        appDescription: _descriptionController.text.trim(), // Use the same description for the app
         appVendor: _appVendorController.text.trim(),
         jdkPath: _jdkPathController.text.trim(),
         additionalModules: widget.project?.additionalModules ?? [],
