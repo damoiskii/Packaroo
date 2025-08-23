@@ -22,7 +22,7 @@ class ProjectProvider extends ChangeNotifier {
     try {
       _projects.clear();
       _projects.addAll(StorageService.getAllProjects());
-      _projects.sort((a, b) => b.lastModified.compareTo(a.lastModified));
+      _projects.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
       _error = null;
     } catch (e) {
       _error = 'Failed to load projects: $e';
@@ -34,8 +34,15 @@ class ProjectProvider extends ChangeNotifier {
   /// Create a new project
   Future<void> createProject(PackarooProject project) async {
     try {
+      // Set the sort order to be at the end of the list
+      final maxOrder = _projects.isEmpty
+          ? 0
+          : _projects.map((p) => p.sortOrder).reduce((a, b) => a > b ? a : b);
+      project.sortOrder = maxOrder + 1;
+
       await StorageService.saveProject(project);
-      _projects.insert(0, project);
+      _projects.add(project);
+      _projects.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
       _selectedProject = project;
       _error = null;
       notifyListeners();
@@ -83,10 +90,20 @@ class ProjectProvider extends ChangeNotifier {
   /// Duplicate a project
   Future<void> duplicateProject(PackarooProject project) async {
     try {
+      // Set the sort order to be after the original project
+      final originalIndex = _projects.indexWhere((p) => p.id == project.id);
+      final insertOrder =
+          originalIndex >= 0 && originalIndex < _projects.length - 1
+              ? (_projects[originalIndex].sortOrder +
+                      _projects[originalIndex + 1].sortOrder) /
+                  2
+              : (_projects.isEmpty ? 1 : _projects.last.sortOrder + 1);
+
       final duplicate = project.copyWith(
         id: null, // Will generate new ID
         name: '${project.name} (Copy)',
         appName: '${project.appName}Copy',
+        sortOrder: insertOrder.round(),
       );
       await createProject(duplicate);
     } catch (e) {
@@ -138,6 +155,72 @@ class ProjectProvider extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  /// Reorder projects by moving a project from oldIndex to newIndex
+  Future<void> reorderProjects(int oldIndex, int newIndex) async {
+    try {
+      if (oldIndex == newIndex) return;
+
+      // Adjust newIndex if moving down the list
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+
+      // Get the project to move
+      final project = _projects.removeAt(oldIndex);
+      _projects.insert(newIndex, project);
+
+      // Update sort orders for all projects to maintain order
+      await _updateSortOrders();
+
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      _error = 'Failed to reorder projects: $e';
+      notifyListeners();
+    }
+  }
+
+  /// Move a project to a specific position
+  Future<void> moveProjectToPosition(String projectId, int newPosition) async {
+    try {
+      final oldIndex = _projects.indexWhere((p) => p.id == projectId);
+      if (oldIndex == -1) return;
+
+      final clampedPosition = newPosition.clamp(0, _projects.length - 1);
+      await reorderProjects(oldIndex, clampedPosition);
+    } catch (e) {
+      _error = 'Failed to move project: $e';
+      notifyListeners();
+    }
+  }
+
+  /// Update sort orders for all projects based on their current position in the list
+  Future<void> _updateSortOrders() async {
+    for (int i = 0; i < _projects.length; i++) {
+      final project = _projects[i];
+      final newOrder =
+          i * 1000; // Use increments of 1000 to allow for future insertions
+      if (project.sortOrder != newOrder) {
+        final updatedProject = project.copyWith(sortOrder: newOrder);
+        _projects[i] = updatedProject;
+        await StorageService.updateProject(updatedProject);
+      }
+    }
+  }
+
+  /// Reset project order to creation date order
+  Future<void> resetProjectOrder() async {
+    try {
+      _projects.sort((a, b) => a.createdDate.compareTo(b.createdDate));
+      await _updateSortOrders();
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      _error = 'Failed to reset project order: $e';
+      notifyListeners();
+    }
   }
 
   void _setLoading(bool loading) {

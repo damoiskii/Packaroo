@@ -278,6 +278,9 @@ class _AppInitializerState extends State<AppInitializer> {
       // Load settings without notifying listeners during build
       await context.read<SettingsProvider>().loadSettings(notify: false);
 
+      // Load projects
+      await context.read<ProjectProvider>().loadProjects();
+
       // Load build history
       await context.read<BuildProvider>().loadBuildHistory();
 

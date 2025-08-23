@@ -44,13 +44,14 @@ class PackarooProjectAdapter extends TypeAdapter<PackarooProject> {
       compress: fields[24] as bool,
       noHeaderFiles: fields[25] as bool,
       noManPages: fields[26] as bool,
+      sortOrder: fields[27] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, PackarooProject obj) {
     writer
-      ..writeByte(27)
+      ..writeByte(28)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -104,7 +105,9 @@ class PackarooProjectAdapter extends TypeAdapter<PackarooProject> {
       ..writeByte(25)
       ..write(obj.noHeaderFiles)
       ..writeByte(26)
-      ..write(obj.noManPages);
+      ..write(obj.noManPages)
+      ..writeByte(27)
+      ..write(obj.sortOrder);
   }
 
   @override

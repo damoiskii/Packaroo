@@ -10,6 +10,8 @@ Packaroo is a powerful desktop tool that simplifies the process of packaging Jav
 
 ### 🎯 Project Management
 - Create and manage multiple packaging projects
+- **Persistent project ordering** - manually arrange projects by dragging or using context menu
+- **Automatic order saving** - project order is preserved between app sessions  
 - Import/export project configurations
 - Project templates for quick setup
 - Duplicate existing projects
@@ -106,6 +108,12 @@ Packaroo is a powerful desktop tool that simplifies the process of packaging Jav
 5. **Build your package** by clicking the "Build" button
 
 ### Advanced Features
+
+- **Project Ordering**: 
+  - Drag and drop projects to reorder them in the project list
+  - Use the context menu (⋮) to move projects to top or bottom
+  - Project order is automatically saved and restored when the app is reopened
+  - Search functionality temporarily hides ordering features
 
 - **JLink Integration**: Enable JLink to create optimized runtime images
 - **Module Management**: Configure custom modules and dependencies

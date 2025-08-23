@@ -86,6 +86,9 @@ class PackarooProject extends HiveObject {
   @HiveField(26)
   late bool noManPages;
 
+  @HiveField(27)
+  late int sortOrder;
+
   PackarooProject({
     String? id,
     required this.name,
@@ -114,10 +117,12 @@ class PackarooProject extends HiveObject {
     this.compress = true,
     this.noHeaderFiles = true,
     this.noManPages = true,
+    int? sortOrder,
   }) {
     this.id = id ?? const Uuid().v4();
     this.createdDate = createdDate ?? DateTime.now();
     this.lastModified = lastModified ?? DateTime.now();
+    this.sortOrder = sortOrder ?? DateTime.now().millisecondsSinceEpoch;
 
     // Set default app name if not provided
     if (appName.isEmpty) {
@@ -154,6 +159,7 @@ class PackarooProject extends HiveObject {
     bool? compress,
     bool? noHeaderFiles,
     bool? noManPages,
+    int? sortOrder,
   }) {
     return PackarooProject(
       id: id ?? this.id,
@@ -183,6 +189,7 @@ class PackarooProject extends HiveObject {
       compress: compress ?? this.compress,
       noHeaderFiles: noHeaderFiles ?? this.noHeaderFiles,
       noManPages: noManPages ?? this.noManPages,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 
@@ -215,6 +222,7 @@ class PackarooProject extends HiveObject {
       'compress': compress,
       'noHeaderFiles': noHeaderFiles,
       'noManPages': noManPages,
+      'sortOrder': sortOrder,
     };
   }
 
@@ -247,6 +255,7 @@ class PackarooProject extends HiveObject {
       compress: json['compress'] ?? true,
       noHeaderFiles: json['noHeaderFiles'] ?? true,
       noManPages: json['noManPages'] ?? true,
+      sortOrder: json['sortOrder'] ?? DateTime.now().millisecondsSinceEpoch,
     );
   }
 

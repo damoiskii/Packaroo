@@ -31,6 +31,30 @@ class StorageService {
     _projectsBox = await Hive.openBox<PackarooProject>(_projectsBoxName);
     _buildsBox = await Hive.openBox<BuildProgress>(_buildsBoxName);
     _settingsBox = await Hive.openBox(_settingsBoxName);
+
+    // Migrate existing projects to add sortOrder if needed
+    await _migrateProjectsSortOrder();
+  }
+
+  /// Migrate existing projects to ensure they have sortOrder values
+  static Future<void> _migrateProjectsSortOrder() async {
+    final projects = getAllProjects();
+    bool needsMigration = false;
+
+    for (int i = 0; i < projects.length; i++) {
+      final project = projects[i];
+      // Check if sortOrder is 0 or not set (default value)
+      if (project.sortOrder == 0) {
+        needsMigration = true;
+        // Set sortOrder based on creation date order
+        project.sortOrder = project.createdDate.millisecondsSinceEpoch;
+        await _projectsBox?.put(project.id, project);
+      }
+    }
+
+    if (needsMigration) {
+      print('Migrated ${projects.length} projects to include sortOrder field');
+    }
   }
 
   /// Close all boxes

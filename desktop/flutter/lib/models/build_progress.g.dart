@@ -22,7 +22,7 @@ class BuildProgressAdapter extends TypeAdapter<BuildProgress> {
       status: fields[2] as BuildStatus,
       progress: fields[3] as double,
       currentStep: fields[4] as String,
-      logs: (fields[5] as List).cast<String>(),
+      logs: (fields[5] as List?)?.cast<String>(),
       startTime: fields[6] as DateTime?,
       endTime: fields[7] as DateTime?,
       errorMessage: fields[8] as String?,
