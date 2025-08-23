@@ -28,91 +28,106 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Row(
         children: [
-          // Navigation Rail
-          NavigationRail(
-            extended: _isDrawerOpen,
-            minWidth: 56,
-            minExtendedWidth: 200,
-            destinations: const [
-              NavigationRailDestination(
-                icon: Icon(Symbols.folder),
-                selectedIcon: Icon(Symbols.folder),
-                label: Text('Projects'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Symbols.analytics),
-                selectedIcon: Icon(Symbols.analytics),
-                label: Text('JAR Analyzer'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Symbols.build),
-                selectedIcon: Icon(Symbols.build),
-                label: Text('Builds'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Symbols.settings),
-                selectedIcon: Icon(Symbols.settings),
-                label: Text('Settings'),
-              ),
-            ],
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-            leading: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Menu toggle button at extreme left
-                Container(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    icon:
-                        Icon(_isDrawerOpen ? Symbols.menu_open : Symbols.menu),
-                    onPressed: () {
-                      setState(() {
-                        _isDrawerOpen = !_isDrawerOpen;
-                      });
-                    },
-                  ),
+          // Custom Navigation Sidebar
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: _isDrawerOpen ? 200 : 56,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainer,
+              border: Border(
+                right: BorderSide(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.2),
+                  width: 1,
                 ),
-                const SizedBox(height: 8),
-                // App icon and name at extreme left
-                if (_isDrawerOpen) ...[
-                  Container(
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const AppIcon(size: 32, showTooltip: true),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Packaroo',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
+              ),
+            ),
+            child: Column(
+              children: [
+                // Header with toggle button and app info
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Menu toggle button
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: Icon(
+                              _isDrawerOpen ? Symbols.menu_open : Symbols.menu),
+                          onPressed: () {
+                            setState(() {
+                              _isDrawerOpen = !_isDrawerOpen;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // App icon and name
+                      if (_isDrawerOpen) ...[
+                        Row(
+                          children: [
+                            const AppIcon(size: 32, showTooltip: true),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Packaroo',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall
+                                    ?.copyWith(
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                               ),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        const Center(
+                          child: AppIcon(size: 32, showTooltip: true),
                         ),
                       ],
-                    ),
+                      const SizedBox(height: 16),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                ] else ...[
-                  Container(
-                    alignment: Alignment.centerLeft,
-                    child: const AppIcon(size: 32, showTooltip: true),
+                ),
+                // Navigation Items
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    children: [
+                      _buildNavItem(
+                        icon: Symbols.folder,
+                        label: 'Projects',
+                        index: 0,
+                      ),
+                      _buildNavItem(
+                        icon: Symbols.analytics,
+                        label: 'JAR Analyzer',
+                        index: 1,
+                      ),
+                      _buildNavItem(
+                        icon: Symbols.build,
+                        label: 'Builds',
+                        index: 2,
+                      ),
+                      _buildNavItem(
+                        icon: Symbols.settings,
+                        label: 'Settings',
+                        index: 3,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                ],
-              ],
-            ),
-            trailing: _isDrawerOpen
-                ? Padding(
+                ),
+                // Bottom area with build status
+                if (_isDrawerOpen)
+                  Padding(
                     padding: const EdgeInsets.all(16),
                     child: Consumer<BuildProvider>(
                       builder: (context, buildProvider, child) {
@@ -133,10 +148,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(
-                                    '${buildProvider.activeBuilds.length} active',
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
+                                  Expanded(
+                                    child: Text(
+                                      '${buildProvider.activeBuilds.length} active',
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -146,8 +163,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         return const SizedBox();
                       },
                     ),
-                  )
-                : null,
+                  ),
+              ],
+            ),
           ),
 
           // Main Content Area
@@ -256,6 +274,67 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
+    final isSelected = _selectedIndex == index;
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          child: Container(
+            height: 56,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: isSelected
+                  ? theme.colorScheme.primaryContainer
+                  : Colors.transparent,
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 56,
+                  child: Icon(
+                    icon,
+                    color: isSelected
+                        ? theme.colorScheme.onPrimaryContainer
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                if (_isDrawerOpen) ...[
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: isSelected
+                            ? theme.colorScheme.onPrimaryContainer
+                            : theme.colorScheme.onSurfaceVariant,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
