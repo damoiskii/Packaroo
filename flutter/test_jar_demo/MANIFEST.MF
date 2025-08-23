@@ -1,8 +1,0 @@
-Manifest-Version: 1.0
-Main-Class: HelloWorld
-Implementation-Title: Packaroo Test Application
-Implementation-Version: 1.2.3
-Implementation-Vendor: Packaroo Demo
-Specification-Title: Test JAR for Packaroo
-Specification-Version: 1.0
-Specification-Vendor: Packaroo Team

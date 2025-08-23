@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'providers/project_provider.dart';
@@ -7,9 +9,15 @@ import 'providers/settings_provider.dart';
 import 'services/storage_service.dart';
 import 'screens/home_screen.dart';
 import 'widgets/animated_startup_screen.dart';
+import 'utils/window_icon_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Configure window manager for desktop platforms
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    await WindowIconManager.configureWindow();
+  }
 
   try {
     // Initialize storage
@@ -17,28 +25,6 @@ void main() async {
   } catch (e) {
     print('Storage initialization failed: $e');
     // Continue without storage for now
-  }
-
-  try {
-    // Initialize window manager for desktop
-    await windowManager.ensureInitialized();
-
-    const windowOptions = WindowOptions(
-      size: Size(1200, 800),
-      center: true,
-      backgroundColor: Colors.transparent,
-      skipTaskbar: false,
-      titleBarStyle: TitleBarStyle.normal,
-      windowButtonVisibility: true,
-    );
-
-    await windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-    });
-  } catch (e) {
-    print('Window manager initialization failed: $e');
-    // Continue without window manager
   }
 
   runApp(const PackarooApp());
