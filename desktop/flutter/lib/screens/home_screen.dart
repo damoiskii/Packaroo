@@ -190,11 +190,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                     tooltip: 'Edit Project',
                                     onPressed: () => _editProject(context),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Symbols.content_copy),
-                                    tooltip: 'Duplicate Project',
-                                    onPressed: () => _duplicateProject(context),
-                                  ),
+                                  // IconButton(
+                                  //   icon: const Icon(Symbols.content_copy),
+                                  //   tooltip: 'Duplicate Project',
+                                  //   onPressed: () => _duplicateProject(context),
+                                  // ),
                                   Consumer<BuildProvider>(
                                     builder: (context, buildProvider, child) {
                                       final isBuilding =
@@ -405,15 +405,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _duplicateProject(BuildContext context) {
-    final project = context.read<ProjectProvider>().selectedProject;
-    if (project != null) {
-      context.read<ProjectProvider>().duplicateProject(project);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Project duplicated successfully')),
-      );
-    }
-  }
+  // void _duplicateProject(BuildContext context) {
+  //   final project = context.read<ProjectProvider>().selectedProject;
+  //   if (project != null) {
+  //     context.read<ProjectProvider>().duplicateProject(project);
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Project duplicated successfully')),
+  //     );
+  //   }
+  // }
 
   void _quickBuild(BuildContext context) {
     final project = context.read<ProjectProvider>().selectedProject;

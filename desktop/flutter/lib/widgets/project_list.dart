@@ -54,31 +54,31 @@ class _ProjectListState extends State<ProjectList> {
                   });
                 },
               ),
-              if (_searchQuery.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Symbols.info,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Drag projects to reorder them. Order is saved automatically.',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              // if (_searchQuery.isEmpty)
+              //   Padding(
+              //     padding: const EdgeInsets.only(top: 8),
+              //     child: Row(
+              //       children: [
+              //         Icon(
+              //           Symbols.info,
+              //           size: 16,
+              //           color: Theme.of(context).colorScheme.outline,
+              //         ),
+              //         const SizedBox(width: 8),
+              //         Expanded(
+              //           child: Text(
+              //             'Drag projects to reorder them. Order is saved automatically.',
+              //             style: Theme.of(context)
+              //                 .textTheme
+              //                 .bodySmall
+              //                 ?.copyWith(
+              //                   color: Theme.of(context).colorScheme.outline,
+              //                 ),
+              //           ),
+              //         ),
+              //       ],
+              //     ),
+              //   ),
             ],
           ),
         ),
@@ -253,38 +253,38 @@ class _ProjectListState extends State<ProjectList> {
                 ],
               ),
             ),
-            const PopupMenuItem(
-              value: 'duplicate',
-              child: Row(
-                children: [
-                  Icon(Symbols.content_copy),
-                  SizedBox(width: 8),
-                  Text('Duplicate'),
-                ],
-              ),
-            ),
-            if (_searchQuery.isEmpty) ...[
-              const PopupMenuItem(
-                value: 'move_to_top',
-                child: Row(
-                  children: [
-                    Icon(Symbols.keyboard_arrow_up),
-                    SizedBox(width: 8),
-                    Text('Move to Top'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'move_to_bottom',
-                child: Row(
-                  children: [
-                    Icon(Symbols.keyboard_arrow_down),
-                    SizedBox(width: 8),
-                    Text('Move to Bottom'),
-                  ],
-                ),
-              ),
-            ],
+            // const PopupMenuItem(
+            //   value: 'duplicate',
+            //   child: Row(
+            //     children: [
+            //       Icon(Symbols.content_copy),
+            //       SizedBox(width: 8),
+            //       Text('Duplicate'),
+            //     ],
+            //   ),
+            // ),
+            // if (_searchQuery.isEmpty) ...[
+            //   const PopupMenuItem(
+            //     value: 'move_to_top',
+            //     child: Row(
+            //       children: [
+            //         Icon(Symbols.keyboard_arrow_up),
+            //         SizedBox(width: 8),
+            //         Text('Move to Top'),
+            //       ],
+            //     ),
+            //   ),
+            //   const PopupMenuItem(
+            //     value: 'move_to_bottom',
+            //     child: Row(
+            //       children: [
+            //         Icon(Symbols.keyboard_arrow_down),
+            //         SizedBox(width: 8),
+            //         Text('Move to Bottom'),
+            //       ],
+            //     ),
+            //   ),
+            // ],
             const PopupMenuItem(
               value: 'delete',
               child: Row(
@@ -321,7 +321,7 @@ class _ProjectListState extends State<ProjectList> {
 
   void _handleMenuAction(
       BuildContext context, String action, PackarooProject project) {
-    final projectProvider = context.read<ProjectProvider>();
+    // final projectProvider = context.read<ProjectProvider>();
 
     switch (action) {
       case 'edit':
@@ -331,25 +331,25 @@ class _ProjectListState extends State<ProjectList> {
           ),
         );
         break;
-      case 'duplicate':
-        projectProvider.duplicateProject(project);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Project duplicated successfully')),
-        );
-        break;
-      case 'move_to_top':
-        projectProvider.moveProjectToPosition(project.id, 0);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Project moved to top')),
-        );
-        break;
-      case 'move_to_bottom':
-        final lastIndex = projectProvider.projects.length - 1;
-        projectProvider.moveProjectToPosition(project.id, lastIndex);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Project moved to bottom')),
-        );
-        break;
+      // case 'duplicate':
+      //   projectProvider.duplicateProject(project);
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(content: Text('Project duplicated successfully')),
+      //   );
+      //   break;
+      // case 'move_to_top':
+      //   projectProvider.moveProjectToPosition(project.id, 0);
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(content: Text('Project moved to top')),
+      //   );
+      //   break;
+      // case 'move_to_bottom':
+      //   final lastIndex = projectProvider.projects.length - 1;
+      //   projectProvider.moveProjectToPosition(project.id, lastIndex);
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(content: Text('Project moved to bottom')),
+      //   );
+      //   break;
       case 'delete':
         _showDeleteConfirmation(context, project);
         break;
