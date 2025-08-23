@@ -94,13 +94,39 @@ class JarAnalyzerService {
   /// Finds the main class from manifest or by scanning
   Future<String> _findMainClass(
       String extractedPath, Map<String, String> manifest) async {
-    // Check manifest first
+    // Extract both Main-Class and Start-Class from manifest
     final manifestMainClass = manifest['Main-Class'];
+    final manifestStartClass = manifest['Start-Class'];
+
+    // For Spring Boot applications, we need to determine the correct main class
     if (manifestMainClass != null && manifestMainClass.isNotEmpty) {
-      return manifestMainClass;
+      // Check if this is a Spring Boot application
+      final isSpringBoot =
+          manifestMainClass.contains('org.springframework.boot.loader');
+
+      if (isSpringBoot) {
+        // For Spring Boot apps, check if it's also a JavaFX application
+        final isJavaFXApp = await _isJavaFXApplication(extractedPath);
+
+        if (isJavaFXApp) {
+          // For Spring Boot + JavaFX apps, use the Spring Boot launcher (Main-Class)
+          // This ensures proper classpath setup for JavaFX modules
+          return manifestMainClass;
+        } else if (manifestStartClass != null &&
+            manifestStartClass.isNotEmpty) {
+          // For non-JavaFX Spring Boot apps, prefer the Start-Class (actual application class)
+          return manifestStartClass;
+        } else {
+          // Fallback to Main-Class if no Start-Class available
+          return manifestMainClass;
+        }
+      } else {
+        // For non-Spring Boot apps, use Main-Class directly
+        return manifestMainClass;
+      }
     }
 
-    // Scan for classes with main method
+    // If no Main-Class in manifest, scan for classes with main method
     final mainClasses = await _scanForMainClasses(extractedPath);
 
     if (mainClasses.isNotEmpty) {
@@ -273,16 +299,38 @@ class JarAnalyzerService {
           }
         }
       } else {
-        // For non-modular JARs, suggest common modules
-        modules.addAll([
-          'java.base',
-          'java.desktop',
-          'java.logging',
-          'java.management',
-          'java.naming',
-          'java.sql',
-          'java.xml',
-        ]);
+        // For non-modular JARs, detect application type and suggest appropriate modules
+        final isJavaFXApp = await _isJavaFXApplication(extractedPath);
+
+        if (isJavaFXApp) {
+          // Add JavaFX modules for JavaFX applications
+          modules.addAll([
+            'java.base',
+            'java.desktop',
+            'java.logging',
+            'java.management',
+            'java.naming',
+            'java.prefs',
+            'java.xml',
+            'javafx.controls',
+            'javafx.fxml',
+            'javafx.base',
+            'javafx.graphics',
+            'javafx.media', // Often needed for multimedia
+            'javafx.web', // For WebView components
+          ]);
+        } else {
+          // For non-JavaFX applications, suggest common modules
+          modules.addAll([
+            'java.base',
+            'java.desktop',
+            'java.logging',
+            'java.management',
+            'java.naming',
+            'java.sql',
+            'java.xml',
+          ]);
+        }
       }
     } catch (e) {
       // If module detection fails, provide basic modules
@@ -290,6 +338,93 @@ class JarAnalyzerService {
     }
 
     return modules;
+  }
+
+  /// Detects if the application uses JavaFX
+  Future<bool> _isJavaFXApplication(String extractedPath) async {
+    try {
+      // Method 1: Check for JavaFX classes in the JAR
+      final result =
+          await Process.run('find', [extractedPath, '-name', '*.class']);
+
+      if (result.exitCode == 0) {
+        final classFiles = result.stdout as String;
+        if (classFiles.contains('javafx') || classFiles.contains('JavaFX')) {
+          return true;
+        }
+      }
+
+      // Method 2: Check JAR contents using jar command for more thorough search
+      final jarPath = Directory(extractedPath).parent.path;
+      final jarFiles = Directory(jarPath)
+          .listSync()
+          .where((file) => file.path.endsWith('.jar'))
+          .map((file) => file.path);
+
+      for (final jarFile in jarFiles) {
+        final jarResult = await Process.run('jar', ['-tf', jarFile]);
+        if (jarResult.exitCode == 0) {
+          final contents = jarResult.stdout as String;
+          if (contents.contains('javafx') || contents.contains('JavaFX')) {
+            return true;
+          }
+        }
+      }
+
+      // Method 3: Check manifest for JavaFX dependencies
+      final manifestFile =
+          File(path.join(extractedPath, 'META-INF', 'MANIFEST.MF'));
+      if (await manifestFile.exists()) {
+        final manifestContent = await manifestFile.readAsString();
+        if (manifestContent.contains('javafx') ||
+            manifestContent.contains('JavaFX')) {
+          return true;
+        }
+      }
+
+      // Method 4: Check for Spring Boot with potential JavaFX usage
+      final hasSpringBoot = await _hasSpringBootStructure(extractedPath);
+      if (hasSpringBoot) {
+        // For Spring Boot apps, check more thoroughly for JavaFX usage
+        final bootInfClasses =
+            Directory(path.join(extractedPath, 'BOOT-INF', 'classes'));
+        if (await bootInfClasses.exists()) {
+          final findResult = await Process.run(
+              'find', [bootInfClasses.path, '-name', '*.class']);
+          if (findResult.exitCode == 0) {
+            final classFiles = findResult.stdout as String;
+            // Check if any class files are in JavaFX-related packages or contain JavaFX references
+            if (classFiles.toLowerCase().contains('application') ||
+                classFiles.toLowerCase().contains('desktop') ||
+                classFiles.toLowerCase().contains('fx')) {
+              // Additional check: look for JavaFX dependencies in BOOT-INF/lib
+              final libDir =
+                  Directory(path.join(extractedPath, 'BOOT-INF', 'lib'));
+              if (await libDir.exists()) {
+                final libFiles =
+                    await libDir.list().map((file) => file.path).toList();
+                if (libFiles.any((file) => file.contains('javafx'))) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return false;
+    } catch (e) {
+      // If detection fails, assume non-JavaFX
+      return false;
+    }
+  }
+
+  /// Checks if the JAR has Spring Boot structure
+  Future<bool> _hasSpringBootStructure(String extractedPath) async {
+    final bootInfDir = Directory(path.join(extractedPath, 'BOOT-INF'));
+    final metaInfDir = Directory(path.join(extractedPath, 'META-INF'));
+
+    return await bootInfDir.exists() && await metaInfDir.exists();
   }
 
   /// Validates Java environment
