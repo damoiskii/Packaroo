@@ -128,6 +128,51 @@
 					<mainClass>com.devdam.desktop.DesktopApplication</mainClass>
 				</configuration>
 			</plugin>
+			
+			<!-- Maven Dependency Plugin for copying dependencies -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/libs</outputDirectory>
+							<includeScope>runtime</includeScope>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			
+			<!-- JPackage Plugin for creating native installers -->
+			<plugin>
+				<groupId>org.panteleyev</groupId>
+				<artifactId>jpackage-maven-plugin</artifactId>
+				<version>1.6.5</version>
+				<configuration>
+					<name>Packaroo</name>
+					<appVersion>${project.version}</appVersion>
+					<vendor>DevDam</vendor>
+					<destination>${project.build.directory}/installer</destination>
+					<input>${project.build.directory}</input>
+					<mainJar>${project.build.finalName}.jar</mainJar>
+					<mainClass>org.springframework.boot.loader.launch.JarLauncher</mainClass>
+					<javaOptions>
+						<option>-Dfile.encoding=UTF-8</option>
+						<option>-Djava.awt.headless=false</option>
+						<option>-Dprism.lcdtext=false</option>
+						<option>-Dspring.main.class=com.devdam.desktop.DesktopApplication</option>
+					</javaOptions>
+					<icon>${basedir}/src/main/resources/images/icon.png</icon>
+					<linux>true</linux>
+					<mac>false</mac>
+					<windows>false</windows>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 

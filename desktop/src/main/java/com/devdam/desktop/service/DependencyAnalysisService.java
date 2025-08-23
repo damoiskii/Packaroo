@@ -143,6 +143,12 @@ public class DependencyAnalysisService {
         // Ensure essential JavaFX modules are included if this is a JavaFX application
         if (isJavaFXApplication(jarPath)) {
             addEssentialJavaFXModules(modules);
+            log.info("JavaFX application detected, added essential JavaFX modules");
+        }
+        
+        // Additional logging for Spring Boot with JavaFX applications
+        if (isSpringBootWithJavaFXApplication(jarPath)) {
+            log.info("Spring Boot with JavaFX application detected - will use appropriate main class configuration");
         }
         
         return modules;
@@ -222,6 +228,41 @@ public class DependencyAnalysisService {
         return false;
     }
     
+    private boolean isSpringBootWithJavaFXApplication(Path jarPath) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("jar", "-tf", jarPath.toString());
+            Process process = pb.start();
+            
+            boolean hasSpringBoot = false;
+            boolean hasJavaFX = false;
+            
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    // Check for Spring Boot indicators
+                    if (line.contains("org/springframework/boot/") || 
+                        line.contains("BOOT-INF/")) {
+                        hasSpringBoot = true;
+                    }
+                    // Check for JavaFX indicators
+                    if (line.contains("javafx") || line.contains("JavaFX")) {
+                        hasJavaFX = true;
+                    }
+                    
+                    // Early exit if both are found
+                    if (hasSpringBoot && hasJavaFX) {
+                        return true;
+                    }
+                }
+            }
+            process.waitFor();
+            return hasSpringBoot && hasJavaFX;
+        } catch (Exception e) {
+            log.debug("Could not check if JAR is Spring Boot with JavaFX application", e);
+        }
+        return false;
+    }
+    
     private void addEssentialJavaFXModules(Set<String> modules) {
         // Add essential JavaFX modules that might not be detected by jdeps
         String[] essentialJavaFXModules = {
@@ -266,31 +307,6 @@ public class DependencyAnalysisService {
         missing.removeAll(available);
         return missing;
     }
-    
-    private String detectMainClass(Path jarPath) {
-        try {
-            // Try to extract Main-Class from JAR manifest
-            ProcessBuilder pb = new ProcessBuilder("jar", "-tf", jarPath.toString());
-            Process process = pb.start();
-            
-            // Look for META-INF/MANIFEST.MF
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.equals("META-INF/MANIFEST.MF")) {
-                        return extractMainClassFromManifest(jarPath);
-                    }
-                }
-            }
-            
-            process.waitFor();
-        } catch (Exception e) {
-            log.warn("Could not detect main class from JAR manifest", e);
-        }
-        
-        return null;
-    }
-    
     private void extractManifestInfo(Path jarPath, DependencyAnalysis.DependencyAnalysisBuilder builder) {
         try (JarFile jarFile = new JarFile(jarPath.toFile())) {
             Manifest manifest = jarFile.getManifest();
@@ -313,7 +329,26 @@ public class DependencyAnalysisService {
                 String mainClass = mainAttributes.getValue("Main-Class");
                 String startClass = mainAttributes.getValue("Start-Class");
                 
-                builder.mainClass(mainClass).startClass(startClass);
+                // For Spring Boot with JavaFX applications, prioritize the actual main class
+                if (isSpringBootWithJavaFXApplication(jarPath)) {
+                    log.info("Detected Spring Boot with JavaFX application");
+                    
+                    // For Spring Boot with JavaFX apps, we MUST use the Spring Boot launcher
+                    // The Start-Class contains the actual application class, but we use Main-Class to run
+                    if (mainClass != null && mainClass.contains("org.springframework.boot.loader")) {
+                        // Use Spring Boot launcher as main class, keep start class for reference
+                        builder.mainClass(mainClass).startClass(startClass);
+                        log.info("Using Spring Boot launcher as main class for Spring Boot JavaFX app: {}", mainClass);
+                        log.info("Actual application class (Start-Class): {}", startClass);
+                    } else {
+                        // Fallback: if Main-Class is not Spring Boot launcher, still use it but log warning
+                        builder.mainClass(mainClass).startClass(startClass);
+                        log.warn("Expected Spring Boot launcher but found: {}. Using as main class anyway.", mainClass);
+                    }
+                } else {
+                    // Standard handling for non-Spring Boot or non-JavaFX apps
+                    builder.mainClass(mainClass).startClass(startClass);
+                }
                        
                 log.info("Extracted manifest info from JAR: {}", jarPath.getFileName());
                 if (startClass != null) {
@@ -326,30 +361,6 @@ public class DependencyAnalysisService {
         } catch (Exception e) {
             log.warn("Could not extract manifest info from JAR: {}", jarPath, e);
         }
-    }
-    
-    private String extractMainClassFromManifest(Path jarPath) {
-        try {
-            ProcessBuilder pb = new ProcessBuilder("jar", "-xf", jarPath.toString(), "META-INF/MANIFEST.MF");
-            pb.directory(jarPath.getParent().toFile());
-            Process process = pb.start();
-            process.waitFor();
-            
-            // Read the manifest file
-            Path manifestPath = jarPath.getParent().resolve("META-INF/MANIFEST.MF");
-            if (manifestPath.toFile().exists()) {
-                List<String> lines = java.nio.file.Files.readAllLines(manifestPath);
-                for (String line : lines) {
-                    if (line.startsWith("Main-Class:")) {
-                        return line.substring("Main-Class:".length()).trim();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Could not extract main class from manifest", e);
-        }
-        
-        return null;
     }
     
     public List<String> getSuggestedModules() {
