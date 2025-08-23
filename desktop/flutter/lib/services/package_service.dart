@@ -83,13 +83,41 @@ class PackageService {
   Future<PackarooProject> analyzeAndCreateProject(String jarPath) async {
     final analysisResult = await _jarAnalyzer.analyzeJar(jarPath);
 
+    // Perform enhanced Spring Boot + JavaFX detection
+    final isSpringBootJavaFX =
+        await _jarAnalyzer.isSpringBootWithJavaFXApplication(jarPath);
+    final isJavaFXApp = await _jarAnalyzer.isJavaFXProject(jarPath);
+
     // Format the app name to title case
     final formattedAppName =
         StringUtils.toTitleCase(analysisResult.suggestedAppName);
 
+    // Create appropriate description based on project type
+    String projectDescription = '';
+    if (isSpringBootJavaFX) {
+      projectDescription = 'Spring Boot application with JavaFX desktop UI';
+    } else if (analysisResult.mainClass
+        .contains('org.springframework.boot.loader')) {
+      projectDescription = 'Spring Boot application';
+    } else if (isJavaFXApp) {
+      projectDescription = 'JavaFX desktop application';
+    } else {
+      projectDescription = 'Java application';
+    }
+
+    print('Project analysis complete:');
+    print('  - Spring Boot + JavaFX: $isSpringBootJavaFX');
+    print('  - JavaFX application: $isJavaFXApp');
+    print('  - Main class: ${analysisResult.mainClass}');
+    print('  - Project type: $projectDescription');
+    print(
+        '  - Using Spring Boot launcher: ${analysisResult.mainClass.contains('org.springframework.boot.loader')}');
+    print('  - Main class: ${analysisResult.mainClass}');
+    print('  - Project type: $projectDescription');
+
     final project = PackarooProject(
       name: formattedAppName,
-      description: '', // Leave empty for user to fill
+      description: projectDescription,
       projectPath: path.dirname(jarPath),
       outputPath: path.join(path.dirname(jarPath), 'dist'),
       jarPath: jarPath,
@@ -687,6 +715,38 @@ class PackageService {
     }
 
     return false;
+  }
+
+  /// Enhanced method to check if a project is a Spring Boot + JavaFX application
+  /// This uses the comprehensive detection from JarAnalyzerService
+  Future<bool> isSpringBootWithJavaFXProject(PackarooProject project) async {
+    try {
+      return await _jarAnalyzer
+          .isSpringBootWithJavaFXApplication(project.jarPath);
+    } catch (e) {
+      print('Error checking Spring Boot + JavaFX: $e');
+      // Fallback to the basic method
+      return _isJavaFXProject(project) &&
+          project.mainClass.contains('org.springframework.boot.loader');
+    }
+  }
+
+  /// Enhanced method to check if a project is a JavaFX application
+  /// This uses the comprehensive detection from JarAnalyzerService
+  Future<bool> isJavaFXProject(PackarooProject project) async {
+    try {
+      // First check the basic indicators for quick detection
+      if (_isJavaFXProject(project)) {
+        return true;
+      }
+
+      // If basic check fails, use the comprehensive JAR analysis
+      return await _jarAnalyzer.isJavaFXProject(project.jarPath);
+    } catch (e) {
+      print('Error checking JavaFX project: $e');
+      // Fallback to the basic method
+      return _isJavaFXProject(project);
+    }
   }
 
   /// Finds the JavaFX module path

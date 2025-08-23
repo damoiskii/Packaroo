@@ -105,23 +105,25 @@ class JarAnalyzerService {
           manifestMainClass.contains('org.springframework.boot.loader');
 
       if (isSpringBoot) {
-        // For Spring Boot apps, check if it's also a JavaFX application
+        // For ALL Spring Boot applications, we MUST use the Spring Boot launcher (Main-Class)
+        // This ensures proper classpath setup, regardless of whether it's JavaFX or not
         final isJavaFXApp = await _isJavaFXApplication(extractedPath);
 
-        if (isJavaFXApp) {
-          // For Spring Boot + JavaFX apps, use the Spring Boot launcher (Main-Class)
-          // This ensures proper classpath setup for JavaFX modules
-          return manifestMainClass;
-        } else if (manifestStartClass != null &&
-            manifestStartClass.isNotEmpty) {
-          // For non-JavaFX Spring Boot apps, prefer the Start-Class (actual application class)
-          return manifestStartClass;
-        } else {
-          // Fallback to Main-Class if no Start-Class available
-          return manifestMainClass;
+        print('Detected Spring Boot application');
+        print('Using Spring Boot launcher as main class: $manifestMainClass');
+        if (manifestStartClass != null && manifestStartClass.isNotEmpty) {
+          print('Actual application class (Start-Class): $manifestStartClass');
         }
+        if (isJavaFXApp) {
+          print('This Spring Boot application also uses JavaFX');
+        }
+
+        // Always return the Spring Boot launcher for proper classpath handling
+        return manifestMainClass;
       } else {
         // For non-Spring Boot apps, use Main-Class directly
+        print(
+            'Using Main-Class for non-Spring Boot application: $manifestMainClass');
         return manifestMainClass;
       }
     }
@@ -130,6 +132,7 @@ class JarAnalyzerService {
     final mainClasses = await _scanForMainClasses(extractedPath);
 
     if (mainClasses.isNotEmpty) {
+      print('Found main class by scanning: ${mainClasses.first}');
       return mainClasses.first;
     }
 
@@ -270,7 +273,7 @@ class JarAnalyzerService {
 
   /// Detects required Java modules
   Future<List<String>> _detectRequiredModules(String extractedPath) async {
-    final modules = <String>[];
+    final modules = <String>{};
 
     try {
       // Check if it's a modular JAR
@@ -292,7 +295,8 @@ class JarAnalyzerService {
                   .replaceFirst('requires ', '')
                   .replaceAll(';', '')
                   .trim();
-              if (moduleName.isNotEmpty) {
+              if (moduleName.isNotEmpty &&
+                  await _isModuleAvailable(moduleName)) {
                 modules.add(moduleName);
               }
             }
@@ -301,27 +305,32 @@ class JarAnalyzerService {
       } else {
         // For non-modular JARs, detect application type and suggest appropriate modules
         final isJavaFXApp = await _isJavaFXApplication(extractedPath);
+        final isSpringBootApp = await _hasSpringBootStructure(extractedPath);
 
         if (isJavaFXApp) {
           // Add JavaFX modules for JavaFX applications
-          modules.addAll([
-            'java.base',
-            'java.desktop',
-            'java.logging',
-            'java.management',
-            'java.naming',
-            'java.prefs',
-            'java.xml',
-            'javafx.controls',
-            'javafx.fxml',
-            'javafx.base',
-            'javafx.graphics',
+          final defaultJavaFXModules = await _getDefaultJavaFXModules();
+          modules.addAll(defaultJavaFXModules);
+
+          // Add essential JavaFX modules
+          await _addEssentialJavaFXModules(modules);
+
+          print('JavaFX application detected, added essential JavaFX modules');
+
+          // Additional modules often needed for JavaFX
+          final additionalJavaFXModules = [
             'javafx.media', // Often needed for multimedia
             'javafx.web', // For WebView components
-          ]);
+          ];
+
+          for (final module in additionalJavaFXModules) {
+            if (await _isModuleAvailable(module)) {
+              modules.add(module);
+            }
+          }
         } else {
           // For non-JavaFX applications, suggest common modules
-          modules.addAll([
+          final commonModules = [
             'java.base',
             'java.desktop',
             'java.logging',
@@ -329,15 +338,33 @@ class JarAnalyzerService {
             'java.naming',
             'java.sql',
             'java.xml',
-          ]);
+          ];
+
+          for (final module in commonModules) {
+            if (await _isModuleAvailable(module)) {
+              modules.add(module);
+            }
+          }
+        }
+
+        // Additional logging for Spring Boot with JavaFX applications
+        if (isSpringBootApp && isJavaFXApp) {
+          print(
+              'Spring Boot with JavaFX application detected - will use appropriate main class configuration');
         }
       }
     } catch (e) {
       // If module detection fails, provide basic modules
-      modules.addAll(['java.base', 'java.desktop']);
+      print('Module detection failed: $e, using basic modules');
+      final basicModules = ['java.base', 'java.desktop'];
+      for (final module in basicModules) {
+        if (await _isModuleAvailable(module)) {
+          modules.add(module);
+        }
+      }
     }
 
-    return modules;
+    return modules.toList();
   }
 
   /// Detects if the application uses JavaFX
@@ -419,6 +446,174 @@ class JarAnalyzerService {
     }
   }
 
+  /// Detects if the application is a Spring Boot application with JavaFX
+  /// This is a critical detection method for proper main class configuration
+  Future<bool> isSpringBootWithJavaFXApplication(String jarPath) async {
+    try {
+      // Extract JAR to analyze its contents
+      final tempDir =
+          await Directory.systemTemp.createTemp('packaroo_analysis_');
+
+      try {
+        // Extract JAR file
+        final extractResult = await Process.run(
+          'jar',
+          ['-xf', jarPath],
+          workingDirectory: tempDir.path,
+        );
+
+        if (extractResult.exitCode != 0) {
+          return false;
+        }
+
+        // Check if it's Spring Boot and JavaFX
+        final hasSpringBoot = await _hasSpringBootStructure(tempDir.path);
+        final hasJavaFX = await _isJavaFXApplication(tempDir.path);
+
+        print(
+            'Spring Boot detection: $hasSpringBoot, JavaFX detection: $hasJavaFX');
+
+        return hasSpringBoot && hasJavaFX;
+      } finally {
+        // Clean up temp directory
+        await tempDir.delete(recursive: true);
+      }
+    } catch (e) {
+      print('Error detecting Spring Boot with JavaFX: $e');
+      return false;
+    }
+  }
+
+  /// Public method to detect if a JAR is a JavaFX application
+  /// This method provides external access to JavaFX detection
+  Future<bool> isJavaFXProject(String jarPath) async {
+    try {
+      // Extract JAR to analyze its contents
+      final tempDir =
+          await Directory.systemTemp.createTemp('packaroo_javafx_check_');
+
+      try {
+        // Extract JAR file
+        final extractResult = await Process.run(
+          'jar',
+          ['-xf', jarPath],
+          workingDirectory: tempDir.path,
+        );
+
+        if (extractResult.exitCode != 0) {
+          return false;
+        }
+
+        return await _isJavaFXApplication(tempDir.path);
+      } finally {
+        // Clean up temp directory
+        await tempDir.delete(recursive: true);
+      }
+    } catch (e) {
+      print('Error detecting JavaFX project: $e');
+      return false;
+    }
+  }
+
+  /// Gets available Java modules in the current runtime
+  Future<Set<String>> _getAvailableModules() async {
+    final modules = <String>{};
+
+    try {
+      final result = await Process.run('java', ['--list-modules']);
+
+      if (result.exitCode == 0) {
+        final lines = (result.stdout as String).split('\n');
+
+        for (final line in lines) {
+          final trimmed = line.trim();
+          if (trimmed.isNotEmpty && trimmed.contains('@')) {
+            // Extract module name (before @)
+            final moduleName = trimmed.split('@')[0];
+            modules.add(moduleName);
+          }
+        }
+      }
+    } catch (e) {
+      print('Could not get available modules: $e');
+    }
+
+    return modules;
+  }
+
+  /// Checks if a specific module is available in the current runtime
+  Future<bool> _isModuleAvailable(String moduleName) async {
+    try {
+      final availableModules = await _getAvailableModules();
+      final available = availableModules.contains(moduleName);
+
+      // Special handling for known problematic modules
+      if (!available && _isProblematicModule(moduleName)) {
+        print(
+            'Module $moduleName is not available in current runtime, skipping');
+        return false;
+      }
+
+      return available;
+    } catch (e) {
+      print('Could not check availability of module: $moduleName - $e');
+      return false;
+    }
+  }
+
+  /// Identifies modules that are often problematic or not available in all distributions
+  bool _isProblematicModule(String moduleName) {
+    return moduleName == 'jdk.management.jfr' ||
+        moduleName == 'jdk.jfr' ||
+        moduleName == 'jdk.management.agent' ||
+        moduleName.startsWith('jdk.internal.') ||
+        moduleName.contains('incubator');
+  }
+
+  /// Gets default JavaFX modules with availability checking
+  Future<Set<String>> _getDefaultJavaFXModules() async {
+    final modules = <String>{};
+    final defaultModules = [
+      'java.base',
+      'java.desktop',
+      'java.logging',
+      'java.management',
+      'java.naming',
+      'java.prefs',
+      'java.xml',
+      'javafx.controls',
+      'javafx.fxml',
+      'javafx.base',
+      'javafx.graphics'
+    ];
+
+    for (final module in defaultModules) {
+      if (await _isModuleAvailable(module)) {
+        modules.add(module);
+        print('Added default module: $module');
+      }
+    }
+
+    return modules;
+  }
+
+  /// Adds essential JavaFX modules to the module set
+  Future<void> _addEssentialJavaFXModules(Set<String> modules) async {
+    final essentialJavaFXModules = [
+      'javafx.controls',
+      'javafx.fxml',
+      'javafx.base',
+      'javafx.graphics'
+    ];
+
+    for (final module in essentialJavaFXModules) {
+      if (await _isModuleAvailable(module)) {
+        modules.add(module);
+        print('Added essential JavaFX module: $module');
+      }
+    }
+  }
+
   /// Checks if the JAR has Spring Boot structure
   Future<bool> _hasSpringBootStructure(String extractedPath) async {
     final bootInfDir = Directory(path.join(extractedPath, 'BOOT-INF'));
@@ -474,6 +669,30 @@ class JarAnalyzerService {
         error: e.toString(),
       );
     }
+  }
+
+  /// Gets suggested modules for common application types
+  /// Similar to the Java version's getSuggestedModules method
+  List<String> getSuggestedModules() {
+    // Common modules that are often needed, focusing on safe, widely available modules
+    return [
+      'java.base',
+      'java.desktop',
+      'java.logging',
+      'java.management',
+      'java.naming',
+      'java.prefs',
+      'java.security.jgss',
+      'java.sql',
+      'java.xml',
+      'javafx.controls',
+      'javafx.fxml',
+      'javafx.base',
+      'javafx.graphics',
+      'jdk.crypto.ec',
+      'jdk.localedata',
+      'jdk.unsupported'
+    ];
   }
 }
 
