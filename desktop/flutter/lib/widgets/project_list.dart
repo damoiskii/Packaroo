@@ -185,13 +185,13 @@ class _ProjectListState extends State<ProjectList> {
         leading: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (_searchQuery.isEmpty)
-              Icon(
-                Symbols.drag_handle,
-                size: 20,
-                color: Theme.of(context).colorScheme.outline,
-              ),
-            if (_searchQuery.isEmpty) const SizedBox(width: 8),
+            // if (_searchQuery.isEmpty)
+            //   Icon(
+            //     Symbols.drag_handle,
+            //     size: 20,
+            //     color: Theme.of(context).colorScheme.outline,
+            //   ),
+            // if (_searchQuery.isEmpty) const SizedBox(width: 8),
             CircleAvatar(
               backgroundColor: isSelected
                   ? Theme.of(context).colorScheme.primary
