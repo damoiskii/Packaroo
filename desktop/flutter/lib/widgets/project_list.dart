@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../providers/project_provider.dart';
 import '../models/packaroo_project.dart';
+import '../screens/project_edit_screen.dart';
 
 class ProjectList extends StatefulWidget {
   const ProjectList({super.key});
@@ -146,6 +147,7 @@ class _ProjectListState extends State<ProjectList> {
   Widget _buildReorderableList(BuildContext context,
       List<PackarooProject> projects, ProjectProvider projectProvider) {
     return ReorderableListView.builder(
+      buildDefaultDragHandles: false, // Disable default drag handles
       itemCount: projects.length,
       onReorder: (oldIndex, newIndex) {
         projectProvider.reorderProjects(oldIndex, newIndex);
@@ -323,7 +325,11 @@ class _ProjectListState extends State<ProjectList> {
 
     switch (action) {
       case 'edit':
-        // TODO: Navigate to edit screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ProjectEditScreen(project: project),
+          ),
+        );
         break;
       case 'duplicate':
         projectProvider.duplicateProject(project);
