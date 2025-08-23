@@ -132,7 +132,8 @@ class PackageService {
       mainClass: analysisResult.mainClass,
       appName: formattedAppName,
       appVersion: analysisResult.suggestedVersion,
-      appDescription: projectDescription, // Use the same description for the app
+      appDescription:
+          projectDescription, // Use the same description for the app
       appVendor: analysisResult.suggestedVendor,
       additionalModules: analysisResult.modules,
       useJlink: !shouldDisableJLink, // Disable JLink for Spring Boot apps

@@ -46,6 +46,8 @@ class JarAnalyzerService {
           fileName: path.basename(jarPath),
           fileSize: await jarFile.length(),
           mainClass: mainClass,
+          startClass:
+              manifest['Start-Class'], // Extract Start-Class from manifest
           manifest: manifest,
           dependencies: dependencies,
           modules: modules,
@@ -725,6 +727,7 @@ class JarAnalysisResult {
   final String fileName;
   final int fileSize;
   final String mainClass;
+  final String? startClass; // The actual application class (Start-Class)
   final Map<String, String> manifest;
   final List<String> dependencies;
   final List<String> modules;
@@ -735,6 +738,7 @@ class JarAnalysisResult {
     required this.fileName,
     required this.fileSize,
     required this.mainClass,
+    this.startClass,
     required this.manifest,
     required this.dependencies,
     required this.modules,
@@ -783,7 +787,74 @@ class JarAnalysisResult {
     final specVendor = manifest['Specification-Vendor'];
     if (specVendor != null && specVendor.isNotEmpty) return specVendor;
 
+    final bundleVendor = manifest['Bundle-Vendor'];
+    if (bundleVendor != null && bundleVendor.isNotEmpty) return bundleVendor;
+
+    // Fallback: try to extract vendor from Start-Class first (actual app class), then Main-Class
+    if (startClass != null && startClass!.isNotEmpty) {
+      final vendorFromStartClass = _extractVendorFromMainClass(startClass);
+      if (vendorFromStartClass.isNotEmpty) return vendorFromStartClass;
+    }
+
+    final vendorFromMainClass = _extractVendorFromMainClass(mainClass);
+    if (vendorFromMainClass.isNotEmpty) return vendorFromMainClass;
+
     return '';
+  }
+
+  /// Extracts vendor from main class package name
+  String _extractVendorFromMainClass(String? mainClass) {
+    try {
+      if (mainClass == null || mainClass.trim().isEmpty) {
+        return '';
+      }
+
+      // Split the main class by dots to get package parts
+      final parts = mainClass.split('.');
+
+      // Look for common package patterns like com.vendor.app or org.vendor.app
+      if (parts.length >= 3) {
+        final firstPart = parts[0].toLowerCase();
+
+        // Handle common package prefixes
+        if (firstPart == 'com' ||
+            firstPart == 'org' ||
+            firstPart == 'net' ||
+            firstPart == 'io') {
+          // Vendor is typically the second part
+          final vendor = parts[1];
+          return _formatVendorName(vendor);
+        } else {
+          // If no standard prefix, use the first part as vendor
+          return _formatVendorName(parts[0]);
+        }
+      } else if (parts.length >= 2) {
+        // For shorter packages, use the first part
+        return _formatVendorName(parts[0]);
+      }
+
+      return '';
+    } catch (e) {
+      print('Could not extract vendor from main class: $mainClass, error: $e');
+      return '';
+    }
+  }
+
+  /// Formats vendor name to title case
+  String _formatVendorName(String vendor) {
+    if (vendor.trim().isEmpty) {
+      return '';
+    }
+
+    // Remove any special characters and numbers
+    vendor = vendor.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+
+    if (vendor.isEmpty) {
+      return '';
+    }
+
+    // Convert to title case - first letter uppercase, rest lowercase
+    return vendor[0].toUpperCase() + vendor.substring(1).toLowerCase();
   }
 }
 
