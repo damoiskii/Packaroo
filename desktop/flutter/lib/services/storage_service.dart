@@ -77,6 +77,22 @@ class StorageService {
     return _projectsBox?.values.toList() ?? [];
   }
 
+  static PackarooProject? getProjectByName(String name) {
+    final projects = getAllProjects();
+    try {
+      return projects.firstWhere(
+          (project) => project.name.toLowerCase() == name.toLowerCase());
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<void> clearAllProjects() async {
+    await _projectsBox?.clear();
+    // Also clear related build progress
+    await _buildsBox?.clear();
+  }
+
   static Future<void> deleteProject(String id) async {
     await _projectsBox?.delete(id);
     // Also delete related build progress

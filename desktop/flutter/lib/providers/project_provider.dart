@@ -31,10 +31,29 @@ class ProjectProvider extends ChangeNotifier {
     }
   }
 
-  /// Create a new project
+  /// Create a new project or update existing one if name already exists
   Future<void> createProject(PackarooProject project) async {
     try {
-      // Set the sort order to be at the end of the list
+      // Check if a project with the same name already exists
+      final existingProject = StorageService.getProjectByName(project.name);
+
+      if (existingProject != null) {
+        print(
+            'Project "${project.name}" already exists. Updating instead of creating new.');
+        // Update existing project with new data but keep the original ID and sort order
+        final updatedProject = project.copyWith(
+          id: existingProject.id,
+          sortOrder: existingProject.sortOrder,
+          createdDate:
+              existingProject.createdDate, // Keep original creation date
+        );
+
+        await updateProject(updatedProject);
+        return;
+      }
+
+      print('Creating new project: "${project.name}"');
+      // Create new project if no duplicate exists
       final maxOrder = _projects.isEmpty
           ? 0
           : _projects.map((p) => p.sortOrder).reduce((a, b) => a > b ? a : b);
@@ -155,6 +174,20 @@ class ProjectProvider extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  /// Clear all projects from storage and memory
+  Future<void> clearAllProjects() async {
+    try {
+      await StorageService.clearAllProjects();
+      _projects.clear();
+      _selectedProject = null;
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      _error = 'Failed to clear projects: $e';
+      notifyListeners();
+    }
   }
 
   /// Reorder projects by moving a project from oldIndex to newIndex
