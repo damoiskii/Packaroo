@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Packaroo
+Comment=A modern Java application packaging tool
+GenericName=Java Package Manager
+Exec=packaroo
+Icon=/home/damoiskii/.local/share/icons/packaroo.png
+StartupNotify=true
+NoDisplay=false
+Type=Application
+Categories=Development;
+Keywords=java;packaging;jpackage;jlink;development;
