@@ -112,8 +112,16 @@ class PackageService {
     print('  - Project type: $projectDescription');
     print(
         '  - Using Spring Boot launcher: ${analysisResult.mainClass.contains('org.springframework.boot.loader')}');
-    print('  - Main class: ${analysisResult.mainClass}');
-    print('  - Project type: $projectDescription');
+
+    // Determine if JLink should be disabled for Spring Boot applications
+    final isSpringBootApp =
+        analysisResult.mainClass.contains('org.springframework.boot.loader');
+    final shouldDisableJLink = isSpringBootApp;
+
+    if (shouldDisableJLink) {
+      print(
+          '  - JLink disabled: Spring Boot applications work better with full JRE');
+    }
 
     final project = PackarooProject(
       name: formattedAppName,
@@ -126,6 +134,7 @@ class PackageService {
       appVersion: analysisResult.suggestedVersion,
       appVendor: analysisResult.suggestedVendor,
       additionalModules: analysisResult.modules,
+      useJlink: !shouldDisableJLink, // Disable JLink for Spring Boot apps
     );
 
     return project;
@@ -335,54 +344,9 @@ class PackageService {
       jlinkArgs.addAll(['--add-modules', 'java.base,java.desktop']);
     }
 
-    // Add module path - ensure JavaFX modules are accessible
-    final modulePaths = <String>[];
-
+    // Add module path
     if (project.modulePath.isNotEmpty) {
-      modulePaths.add(project.modulePath);
-    }
-
-    // For JavaFX applications, try to find JavaFX module path
-    if (_isJavaFXProject(project)) {
-      final javaFxModulePath = await _findJavaFxModulePath();
-      if (javaFxModulePath != null) {
-        modulePaths.add(javaFxModulePath);
-        progress.addLog('Added JavaFX module path: $javaFxModulePath');
-      } else {
-        progress.addLog(
-            'Warning: JavaFX modules detected but JavaFX module path not found');
-        progress.addLog(
-            'JavaFX runtime not available - removing JavaFX modules from JLink to prevent errors');
-
-        // Remove JavaFX modules from additionalModules to prevent JLink errors
-        final nonJavaFxModules = project.additionalModules
-            .where((module) => !module.startsWith('javafx.'))
-            .toList();
-
-        // If we removed JavaFX modules, update the JLink args
-        if (nonJavaFxModules.length != project.additionalModules.length) {
-          if (nonJavaFxModules.isNotEmpty) {
-            // Update jlinkArgs to use non-JavaFX modules only
-            final moduleIndex = jlinkArgs.indexOf('--add-modules');
-            if (moduleIndex != -1 && moduleIndex + 1 < jlinkArgs.length) {
-              jlinkArgs[moduleIndex + 1] = nonJavaFxModules.join(',');
-            }
-          } else {
-            // If no modules left, use default
-            final moduleIndex = jlinkArgs.indexOf('--add-modules');
-            if (moduleIndex != -1 && moduleIndex + 1 < jlinkArgs.length) {
-              jlinkArgs[moduleIndex + 1] = 'java.base,java.desktop';
-            }
-          }
-          progress.addLog(
-              'Updated JLink modules to exclude JavaFX: ${nonJavaFxModules.join(',')}');
-        }
-      }
-    }
-
-    if (modulePaths.isNotEmpty) {
-      jlinkArgs.addAll(
-          ['--module-path', modulePaths.join(Platform.isWindows ? ';' : ':')]);
+      jlinkArgs.addAll(['--module-path', project.modulePath]);
     }
 
     progress.addLog('JLink command: $_jlinkCommand ${jlinkArgs.join(' ')}');
@@ -446,22 +410,8 @@ class PackageService {
       jpackageArgs.addAll(['--type', project.packageType]);
     }
 
-    // JVM options - Add JavaFX module options for non-JLink scenarios
+    // JVM options
     final jvmOptions = List<String>.from(project.jvmOptions);
-
-    // For JavaFX applications not using JLink, add module path for JavaFX
-    if (!project.useJlink && _isJavaFXProject(project)) {
-      // Add JavaFX modules to module path for fat JAR scenarios
-      jvmOptions.addAll([
-        '--add-modules=javafx.controls,javafx.fxml,javafx.base,javafx.graphics,javafx.media,javafx.web',
-        '--add-exports=javafx.base/com.sun.javafx.runtime=ALL-UNNAMED',
-        '--add-exports=javafx.controls/com.sun.javafx.scene.control.behavior=ALL-UNNAMED',
-        '--add-exports=javafx.controls/com.sun.javafx.scene.control=ALL-UNNAMED',
-        '--add-exports=javafx.base/com.sun.javafx.binding=ALL-UNNAMED',
-        '--add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED',
-        '--add-exports=javafx.graphics/com.sun.javafx.stage=ALL-UNNAMED',
-      ]);
-    }
 
     // Add all JVM options
     for (final option in jvmOptions) {
@@ -747,60 +697,5 @@ class PackageService {
       // Fallback to the basic method
       return _isJavaFXProject(project);
     }
-  }
-
-  /// Finds the JavaFX module path
-  Future<String?> _findJavaFxModulePath() async {
-    // Try to find JavaFX modules in common locations
-    final potentialPaths = <String>[];
-
-    if (Platform.isWindows) {
-      potentialPaths.addAll([
-        'C:\\Program Files\\Java\\javafx-21\\lib',
-        'C:\\Program Files (x86)\\Java\\javafx-21\\lib',
-        'C:\\javafx\\lib',
-      ]);
-    } else if (Platform.isMacOS) {
-      potentialPaths.addAll([
-        '/usr/local/javafx/lib',
-        '/opt/javafx/lib',
-        '/Library/Java/JavaVirtualMachines/javafx/lib',
-      ]);
-    } else {
-      potentialPaths.addAll([
-        '/usr/lib/jvm/javafx/lib',
-        '/usr/share/openjfx/lib',
-        '/opt/javafx/lib',
-        '/usr/local/javafx/lib',
-      ]);
-    }
-
-    // Check each potential path for JavaFX modules
-    for (final potentialPath in potentialPaths) {
-      final dir = Directory(potentialPath);
-      if (await dir.exists()) {
-        // Check if JavaFX base module exists
-        final javafxBaseExists =
-            await File(path.join(potentialPath, 'javafx.base.jar')).exists() ||
-                await File(path.join(potentialPath, 'javafx-base-*.jar'))
-                    .exists();
-
-        if (javafxBaseExists) {
-          return potentialPath;
-        }
-      }
-    }
-
-    // Try to detect JavaFX from JAVA_HOME if available
-    final javaHome = Platform.environment['JAVA_HOME'];
-    if (javaHome != null) {
-      final javafxInJavaHome = path.join(javaHome, 'lib');
-      final javafxBase = File(path.join(javafxInJavaHome, 'javafx.base.jar'));
-      if (await javafxBase.exists()) {
-        return javafxInJavaHome;
-      }
-    }
-
-    return null;
   }
 }

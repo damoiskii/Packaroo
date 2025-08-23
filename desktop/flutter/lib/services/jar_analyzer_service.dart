@@ -328,6 +328,26 @@ class JarAnalyzerService {
               modules.add(module);
             }
           }
+        } else if (isSpringBootApp) {
+          // For Spring Boot applications, add minimal modules
+          // Similar to Java version - Spring Boot handles its own classpath
+          final springBootModules = [
+            'java.base',
+            'java.desktop',
+            'java.logging',
+            'java.management',
+            'java.naming',
+            'java.sql',
+            'java.xml',
+          ];
+
+          for (final module in springBootModules) {
+            if (await _isModuleAvailable(module)) {
+              modules.add(module);
+            }
+          }
+
+          print('Spring Boot application detected, added minimal module set');
         } else {
           // For non-JavaFX applications, suggest common modules
           final commonModules = [
@@ -694,6 +714,9 @@ class JarAnalyzerService {
       'jdk.unsupported'
     ];
   }
+
+  /// Finds the JavaFX module path on the system
+  /// Returns null if JavaFX modules are not found
 }
 
 /// Result of JAR file analysis
