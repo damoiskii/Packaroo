@@ -53,19 +53,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Menu toggle button
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          icon: Icon(
-                              _isDrawerOpen ? Symbols.menu_open : Symbols.menu),
-                          onPressed: () {
-                            setState(() {
-                              _isDrawerOpen = !_isDrawerOpen;
-                            });
-                          },
-                        ),
-                      ),
+                      // Align(
+                      //   alignment: Alignment.centerLeft,
+                      //   child: IconButton(
+                      //     padding: EdgeInsets.zero,
+                      //     icon: Icon(
+                      //         _isDrawerOpen ? Symbols.menu_open : Symbols.menu),
+                      //     onPressed: () {
+                      //       setState(() {
+                      //         _isDrawerOpen = !_isDrawerOpen;
+                      //       });
+                      //     },
+                      //   ),
+                      // ),
                       const SizedBox(height: 8),
                       // App icon and name
                       if (_isDrawerOpen) ...[
