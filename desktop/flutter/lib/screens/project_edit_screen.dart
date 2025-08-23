@@ -417,7 +417,7 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
       // Analyze the JAR file
       final analysisResult = await _jarAnalyzer.analyzeJar(jarPath);
 
-      // Auto-populate all fields with analyzed data
+      // Auto-populate all fields with analyzed data (always update, regardless of current values)
       setState(() {
         _jarPathController.text = jarPath;
 
@@ -425,35 +425,24 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
         final formattedAppName =
             StringUtils.toTitleCase(analysisResult.suggestedAppName);
 
-        // Only update fields if they're currently empty (don't override user changes)
-        if (_nameController.text.isEmpty) {
-          _nameController.text = formattedAppName;
-        }
+        // Always update all fields with new JAR analysis data
+        _nameController.text = formattedAppName;
+        _mainClassController.text = analysisResult.mainClass;
+        _appNameController.text = formattedAppName;
+        _appVersionController.text = analysisResult.suggestedVersion;
 
-        if (_mainClassController.text.isEmpty) {
-          _mainClassController.text = analysisResult.mainClass;
-        }
-
-        if (_appNameController.text.isEmpty) {
-          _appNameController.text = formattedAppName;
-        }
-
-        if (_appVersionController.text.isEmpty ||
-            _appVersionController.text == '1.0.0') {
-          _appVersionController.text = analysisResult.suggestedVersion;
-        }
-
-        // Always update vendor field from JAR metadata if available
+        // Always update vendor field from JAR metadata
         final jarVendor = analysisResult.suggestedVendor;
-        if (jarVendor.isNotEmpty) {
-          _appVendorController.text = jarVendor;
-        }
+        _appVendorController.text = jarVendor.isNotEmpty ? jarVendor : '';
 
-        // Set default output path if empty
-        if (_outputPathController.text.isEmpty) {
-          final jarDir = jarPath.substring(0, jarPath.lastIndexOf('/'));
-          _outputPathController.text = '$jarDir/dist';
-        }
+        // Always update description from JAR metadata if available
+        final jarDescription = analysisResult
+            .suggestedAppName; // Use app name as default description
+        _descriptionController.text = jarDescription;
+
+        // Set output path based on JAR location
+        final jarDir = jarPath.substring(0, jarPath.lastIndexOf('/'));
+        _outputPathController.text = '$jarDir/dist';
 
         _isAnalyzing = false;
       });
@@ -463,7 +452,7 @@ class _ProjectEditScreenState extends State<ProjectEditScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'JAR analyzed successfully! Found main class: ${analysisResult.mainClass}'),
+                'Form updated with new JAR data! Main class: ${analysisResult.mainClass}'),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
