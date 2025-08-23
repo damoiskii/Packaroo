@@ -175,131 +175,142 @@ class _ProjectListState extends State<ProjectList> {
       ProjectProvider projectProvider,
       {Key? key}) {
     final isSelected = projectProvider.selectedProject?.id == project.id;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    // Define colors based on theme and selection state
+    final Color cardColor;
+    final Color avatarBackgroundColor;
+    final Color avatarIconColor;
+
+    if (isSelected) {
+      if (isDarkMode) {
+        cardColor = const Color(0xFF1E3A5F); // Dark blue for dark theme
+        avatarBackgroundColor = const Color(0xFF90CAF9); // Light blue
+        avatarIconColor = const Color(0xFF0D47A1); // Dark blue
+      } else {
+        cardColor = const Color(0xFFE3F2FD); // Light blue for light theme
+        avatarBackgroundColor = const Color(0xFF1976D2); // Dark blue
+        avatarIconColor = Colors.white;
+      }
+    } else {
+      if (isDarkMode) {
+        cardColor = const Color(0xFF2C2C2C); // Dark card
+        avatarBackgroundColor =
+            const Color(0xFF424242); // Darker avatar background
+        avatarIconColor = const Color(0xFF90CAF9); // Light blue icon
+      } else {
+        cardColor = Colors.white; // Light card
+        avatarBackgroundColor =
+            const Color(0xFFE3F2FD); // Light blue avatar background
+        avatarIconColor = const Color(0xFF1976D2); // Dark blue icon
+      }
+    }
 
     return Card(
       key: key,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       elevation: isSelected ? 4 : 1,
-      color: isSelected ? Theme.of(context).colorScheme.primaryContainer : null,
-      child: ListTile(
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // if (_searchQuery.isEmpty)
-            //   Icon(
-            //     Symbols.drag_handle,
-            //     size: 20,
-            //     color: Theme.of(context).colorScheme.outline,
-            //   ),
-            // if (_searchQuery.isEmpty) const SizedBox(width: 8),
-            CircleAvatar(
-              backgroundColor: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.primaryContainer,
-              child: Icon(
-                Symbols.package_2,
-                color: isSelected
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(context).colorScheme.onPrimaryContainer,
-              ),
-            ),
-          ],
-        ),
-        title: Text(
-          project.displayName,
-          style: TextStyle(
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (project.description.isNotEmpty)
-              Text(
-                project.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  Symbols.schedule,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  _formatDate(project.lastModified),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        trailing: PopupMenuButton<String>(
-          icon: const Icon(Symbols.more_vert),
-          onSelected: (value) => _handleMenuAction(context, value, project),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(Symbols.edit),
-                  SizedBox(width: 8),
-                  Text('Edit'),
-                ],
-              ),
-            ),
-            // const PopupMenuItem(
-            //   value: 'duplicate',
-            //   child: Row(
-            //     children: [
-            //       Icon(Symbols.content_copy),
-            //       SizedBox(width: 8),
-            //       Text('Duplicate'),
-            //     ],
-            //   ),
-            // ),
-            // if (_searchQuery.isEmpty) ...[
-            //   const PopupMenuItem(
-            //     value: 'move_to_top',
-            //     child: Row(
-            //       children: [
-            //         Icon(Symbols.keyboard_arrow_up),
-            //         SizedBox(width: 8),
-            //         Text('Move to Top'),
-            //       ],
-            //     ),
-            //   ),
-            //   const PopupMenuItem(
-            //     value: 'move_to_bottom',
-            //     child: Row(
-            //       children: [
-            //         Icon(Symbols.keyboard_arrow_down),
-            //         SizedBox(width: 8),
-            //         Text('Move to Bottom'),
-            //       ],
-            //     ),
-            //   ),
-            // ],
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Symbols.delete),
-                  SizedBox(width: 8),
-                  Text('Delete'),
-                ],
-              ),
-            ),
-          ],
-        ),
+      color: cardColor,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
           projectProvider.selectProject(project);
         },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: avatarBackgroundColor,
+                child: Icon(
+                  Symbols.package_2,
+                  color: avatarIconColor,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      project.displayName,
+                      style: TextStyle(
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 16,
+                        color: isDarkMode ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    if (project.description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        project.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color:
+                              isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Symbols.schedule,
+                          size: 16,
+                          color:
+                              isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatDate(project.lastModified),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDarkMode
+                                ? Colors.grey[300]
+                                : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Symbols.more_vert,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                ),
+                onSelected: (value) =>
+                    _handleMenuAction(context, value, project),
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Symbols.edit),
+                        SizedBox(width: 8),
+                        Text('Edit'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Symbols.delete),
+                        SizedBox(width: 8),
+                        Text('Delete'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
